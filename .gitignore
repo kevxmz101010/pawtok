@@ -1,0 +1,28 @@
+# Node
+node_modules/
+dist/
+.env
+.env.local
+frontend/dist/
+mysql-data/
+# Java / Maven
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/jdk-17.0.2/
+backend/jdk17.zip
+backend/apache-maven-*/
+*.class
+*.jar
+*.war
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

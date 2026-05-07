@@ -1,2 +1,3 @@
 Update at 2026-05-07T12:33:47 - Refactorizar contexto de autenticación
 Update at 2026-05-07T15:43:51 - Refactorizar contexto de autenticación
+Update at 2026-05-07T15:55:38 - Mejorar diseño responsivo

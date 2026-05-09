@@ -4,3 +4,4 @@ Update at 2026-05-07T15:55:38 - Mejorar diseño responsivo
 Update at 2026-05-07T17:59:01 - Actualizar formato de respuesta de la API
 Update at 2026-05-08T15:11:04 - Añadir validaciones al formulario
 Update at 2026-05-09T10:25:20 - Actualizar documentación
+Update at 2026-05-09T14:24:59 - Mejorar accesibilidad

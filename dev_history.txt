@@ -6,3 +6,4 @@ Update at 2026-05-08T15:11:04 - Añadir validaciones al formulario
 Update at 2026-05-09T10:25:20 - Actualizar documentación
 Update at 2026-05-09T14:24:59 - Mejorar accesibilidad
 Update at 2026-05-10T09:30:21 - Actualizar paleta de colores
+Update at 2026-05-10T18:38:41 - Modificar estilos del dashboard

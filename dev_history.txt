@@ -11,3 +11,4 @@ Update at 2026-05-10T18:46:47 - Configurar pruebas unitarias
 Update at 2026-05-10T20:17:42 - Implementar barra de búsqueda
 Update at 2026-05-11T10:45:52 - Solucionar bug visual en el panel de administrador
 Update at 2026-05-11T15:55:04 - Actualizar README.md
+Update at 2026-05-11T17:46:50 - Merge branch 'feature/ui-updates'

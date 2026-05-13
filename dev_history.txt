@@ -18,3 +18,4 @@ Update at 2026-05-12T10:17:47 - Crear componente de notificaciones
 Update at 2026-05-12T17:33:57 - Añadir validaciones al formulario
 Update at 2026-05-13T09:07:56 - Corregir error en el login
 Update at 2026-05-13T10:24:57 - Añadir validaciones al formulario
+Update at 2026-05-13T11:18:52 - Modificar estilos del dashboard

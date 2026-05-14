@@ -21,3 +21,4 @@ Update at 2026-05-13T10:24:57 - Añadir validaciones al formulario
 Update at 2026-05-13T11:18:52 - Modificar estilos del dashboard
 Update at 2026-05-13T11:21:43 - Actualizar README.md
 Update at 2026-05-14T10:28:46 - Optimizar carga de imágenes
+Update at 2026-05-14T13:38:30 - Actualizar dependencias

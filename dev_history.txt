@@ -24,3 +24,4 @@ Update at 2026-05-14T10:28:46 - Optimizar carga de imágenes
 Update at 2026-05-14T13:38:30 - Actualizar dependencias
 Update at 2026-05-14T13:45:42 - Solucionar problemas de CORS
 Update at 2026-05-14T15:10:21 - Revisar consultas a la base de datos
+Update at 2026-05-19T14:45:51 - Corregir error en el login

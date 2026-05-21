@@ -28,3 +28,4 @@ Update at 2026-05-19T14:45:51 - Corregir error en el login
 Update at 2026-05-19T16:47:40 - Ajustar márgenes en la vista móvil
 Update at 2026-05-20T11:52:28 - Modificar animaciones
 Update at 2026-05-20T14:10:17 - Limpiar código sin uso
+Update at 2026-05-21T10:25:35 - Actualizar documentación

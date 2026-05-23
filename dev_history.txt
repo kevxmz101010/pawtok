@@ -34,3 +34,4 @@ Update at 2026-05-21T16:32:09 - Actualizar paleta de colores
 Update at 2026-05-21T16:42:02 - Actualizar estilos del encabezado
 Update at 2026-05-22T09:28:02 - Modificar estilos del dashboard
 Update at 2026-05-22T11:36:39 - Corregir enlace de navegación
+Update at 2026-05-22T20:26:47 - Merge branch 'feature/ui-updates'

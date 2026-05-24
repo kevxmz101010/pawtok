@@ -37,3 +37,4 @@ Update at 2026-05-22T11:36:39 - Corregir enlace de navegación
 Update at 2026-05-22T20:26:47 - Merge branch 'feature/ui-updates'
 Update at 2026-05-22T21:41:10 - Limpiar código sin uso
 Update at 2026-05-24T09:15:13 - Modificar animaciones
+Update at 2026-05-24T11:23:42 - Fix temporal para el renderizado

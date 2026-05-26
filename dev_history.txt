@@ -41,3 +41,4 @@ Update at 2026-05-24T11:23:42 - Fix temporal para el renderizado
 Update at 2026-05-24T16:01:44 - Modificar estilos del dashboard
 Update at 2026-05-24T18:37:08 - Mejorar accesibilidad
 Update at 2026-05-25T15:49:09 - Mejorar diseño responsivo
+Update at 2026-05-26T15:48:38 - Merge branch 'feature/ui-updates'

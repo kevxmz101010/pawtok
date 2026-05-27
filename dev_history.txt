@@ -44,3 +44,4 @@ Update at 2026-05-25T15:49:09 - Mejorar diseño responsivo
 Update at 2026-05-26T15:48:38 - Merge branch 'feature/ui-updates'
 Update at 2026-05-26T18:22:52 - Actualizar dependencias
 Update at 2026-05-26T20:45:55 - Mejorar accesibilidad
+Update at 2026-05-26T21:47:41 - Corregir enlace de navegación

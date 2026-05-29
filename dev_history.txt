@@ -49,3 +49,4 @@ Update at 2026-05-27T12:20:33 - Actualizar README.md
 Update at 2026-05-27T14:51:33 - Agregar estado de carga
 Update at 2026-05-27T19:45:19 - Implementar barra de búsqueda
 Update at 2026-05-27T21:28:40 - Refactorizar contexto de autenticación
+Update at 2026-05-28T19:02:57 - Actualizar estilos del encabezado

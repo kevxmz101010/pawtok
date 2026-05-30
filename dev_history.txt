@@ -51,3 +51,4 @@ Update at 2026-05-27T19:45:19 - Implementar barra de búsqueda
 Update at 2026-05-27T21:28:40 - Refactorizar contexto de autenticación
 Update at 2026-05-28T19:02:57 - Actualizar estilos del encabezado
 Update at 2026-05-28T20:03:38 - Solucionar problemas de CORS
+Update at 2026-05-29T19:12:17 - Modificar estilos del dashboard

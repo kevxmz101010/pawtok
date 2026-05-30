@@ -53,3 +53,4 @@ Update at 2026-05-28T19:02:57 - Actualizar estilos del encabezado
 Update at 2026-05-28T20:03:38 - Solucionar problemas de CORS
 Update at 2026-05-29T19:12:17 - Modificar estilos del dashboard
 Update at 2026-05-30T10:52:26 - Fix temporal para el renderizado
+Update at 2026-05-30T17:54:53 - Actualizar dependencias

@@ -57,3 +57,4 @@ Update at 2026-05-30T17:54:53 - Actualizar dependencias
 Update at 2026-05-31T21:00:20 - Añadir validaciones al formulario
 Update at 2026-06-01T10:59:31 - Mejorar accesibilidad
 Update at 2026-06-01T15:15:17 - Configurar pruebas unitarias
+Update at 2026-06-01T17:06:34 - Refactorizar contexto de autenticación

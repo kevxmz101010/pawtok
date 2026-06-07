@@ -66,3 +66,4 @@ Update at 2026-06-04T14:36:59 - Ajustar márgenes en la vista móvil
 Update at 2026-06-04T20:28:58 - Merge branch 'feature/ui-updates'
 Update at 2026-06-05T09:32:56 - Agregar estado de carga
 Update at 2026-06-05T17:11:40 - Mejorar diseño responsivo
+Update at 2026-06-07T10:50:50 - WIP: Integración de pagos

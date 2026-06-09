@@ -72,3 +72,4 @@ Update at 2026-06-08T15:02:51 - Corregir enlace de navegación
 Update at 2026-06-08T15:58:47 - Implementar barra de búsqueda
 Update at 2026-06-08T16:48:33 - Solucionar problemas de CORS
 Update at 2026-06-08T19:50:01 - Actualizar paleta de colores
+Update at 2026-06-09T13:52:41 - Agregar nuevos iconos

@@ -71,3 +71,4 @@ Update at 2026-06-07T13:49:56 - Refactorizar esquema de base de datos
 Update at 2026-06-08T15:02:51 - Corregir enlace de navegación
 Update at 2026-06-08T15:58:47 - Implementar barra de búsqueda
 Update at 2026-06-08T16:48:33 - Solucionar problemas de CORS
+Update at 2026-06-08T19:50:01 - Actualizar paleta de colores

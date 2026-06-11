@@ -74,3 +74,4 @@ Update at 2026-06-08T16:48:33 - Solucionar problemas de CORS
 Update at 2026-06-08T19:50:01 - Actualizar paleta de colores
 Update at 2026-06-09T13:52:41 - Agregar nuevos iconos
 Update at 2026-06-09T16:18:16 - Agregar manejo de errores
+Update at 2026-06-11T18:36:15 - Agregar estado de carga

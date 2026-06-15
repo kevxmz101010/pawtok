@@ -80,3 +80,4 @@ Update at 2026-06-12T10:30:47 - Corregir error en el login
 Update at 2026-06-12T21:28:56 - Implementar barra de búsqueda
 Update at 2026-06-15T10:09:38 - Actualizar documentación
 Update at 2026-06-15T12:01:59 - Actualizar estilos del encabezado
+Update at 2026-06-15T13:55:34 - Añadir validaciones al formulario

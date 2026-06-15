@@ -81,3 +81,4 @@ Update at 2026-06-12T21:28:56 - Implementar barra de búsqueda
 Update at 2026-06-15T10:09:38 - Actualizar documentación
 Update at 2026-06-15T12:01:59 - Actualizar estilos del encabezado
 Update at 2026-06-15T13:55:34 - Añadir validaciones al formulario
+Update at 2026-06-15T15:07:11 - Solucionar problemas de CORS

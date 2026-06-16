@@ -83,3 +83,4 @@ Update at 2026-06-15T12:01:59 - Actualizar estilos del encabezado
 Update at 2026-06-15T13:55:34 - Añadir validaciones al formulario
 Update at 2026-06-15T15:07:11 - Solucionar problemas de CORS
 Update at 2026-06-16T12:39:35 - Mejorar diseño responsivo
+Update at 2026-06-16T14:56:31 - Crear componente de notificaciones

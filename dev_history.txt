@@ -85,3 +85,4 @@ Update at 2026-06-15T15:07:11 - Solucionar problemas de CORS
 Update at 2026-06-16T12:39:35 - Mejorar diseño responsivo
 Update at 2026-06-16T14:56:31 - Crear componente de notificaciones
 Update at 2026-06-16T21:37:53 - Solucionar bug visual en el panel de administrador
+Update at 2026-06-17T13:56:49 - Limpiar código sin uso

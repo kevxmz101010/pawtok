@@ -87,3 +87,4 @@ Update at 2026-06-16T14:56:31 - Crear componente de notificaciones
 Update at 2026-06-16T21:37:53 - Solucionar bug visual en el panel de administrador
 Update at 2026-06-17T13:56:49 - Limpiar código sin uso
 Update at 2026-06-17T17:18:45 - Merge branch 'feature/ui-updates'
+Update at 2026-06-18T09:50:13 - Corregir enlace de navegación

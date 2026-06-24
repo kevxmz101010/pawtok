@@ -89,3 +89,4 @@ Update at 2026-06-17T13:56:49 - Limpiar código sin uso
 Update at 2026-06-17T17:18:45 - Merge branch 'feature/ui-updates'
 Update at 2026-06-18T09:50:13 - Corregir enlace de navegación
 Update at 2026-06-18T12:37:57 - Configurar pruebas unitarias
+Update at 2026-06-24T11:18:47 - Modificar estilos del dashboard

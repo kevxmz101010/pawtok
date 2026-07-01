@@ -23,7 +23,7 @@ public class MascotaService {
     private final FileStorageService fileStorageService;
 
     public List<MascotaDTO> getAllMascotas() {
-        return mascotaRepository.findAll().stream()
+        return mascotaRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id")).stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }

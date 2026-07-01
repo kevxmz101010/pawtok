@@ -12,13 +12,23 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * Configuración de Seguridad (Spring Security)
+ * Este es el "Guardián" o "Bouncer" de la aplicación.
+ * Decide qué rutas son públicas (como ver perritos) y qué rutas requieren inicio de sesión (como adoptar).
+ */
 @Configuration
-@EnableWebSecurity
+@EnableWebSecurity // Activa la seguridad en toda la app web
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
 
+    /**
+     * Proveedor de Autenticación.
+     * Le dice a Spring Security cómo buscar a un usuario (usando userDetailsService) 
+     * y cómo verificar su contraseña (usando passwordEncoder).
+     */
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -32,21 +42,32 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 
+    /**
+     * Encriptador de contraseñas.
+     * Usa BCrypt, un algoritmo muy fuerte. Convierte "123456" en algo como "$2a$10$xyz...".
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * La Cadena de Filtros (Filtro de Seguridad Principal).
+     * Aquí definimos literalmente quién puede entrar a dónde.
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configure(http))
-            .csrf(csrf -> csrf.disable())
-            .securityContext(context -> context.requireExplicitSave(false))
+            .cors(cors -> cors.configure(http)) // Permite que el Frontend (React) se comunique con este Backend
+            .csrf(csrf -> csrf.disable()) // Desactiva protección CSRF (no es necesaria en nuestro diseño)
+            .securityContext(context -> context.requireExplicitSave(false)) // Guarda la sesión automáticamente (Cookies)
             .authorizeHttpRequests(auth -> auth
+                // Estas rutas son PÚBLICAS (permitAll). Cualquiera puede entrar sin iniciar sesión.
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/mascotas", "/api/mascotas/**", "/uploads/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/contacto").permitAll()
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout", "/dev/seed", "/api/testdb", "/api/testpet", "/api/fixpets").permitAll()
+                
+                // CUALQUIER OTRA RUTA que no esté en la lista anterior, REQUIERE que inicies sesión.
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider());

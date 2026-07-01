@@ -3,12 +3,20 @@ import com.pawtok.model.enums.*;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "mascotas")
+/**
+ * Modelo Mascota (Entidad de Base de Datos)
+ * Esta clase es como el "Plano" o "Molde" de una mascota.
+ * Le dice a Hibernate (la herramienta de Spring Boot) exactamente cómo debe crear la tabla `mascotas` en MySQL.
+ */
+@Entity // Indica que esto es una tabla en la BD.
+@Table(name = "mascotas") // El nombre exacto de la tabla en MySQL.
 public class Mascota {
+    // @Id indica que esta es la Llave Primaria (Primary Key). 
+    // @GeneratedValue(strategy = GenerationType.IDENTITY) hace que sea Autoincremental (1, 2, 3...).
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    // Si la columna en SQL se llama diferente que la variable en Java, usamos @Column.
     @Column(name = "id_refugio")
     private Long idRefugio;
     
@@ -21,12 +29,13 @@ public class Mascota {
     private String edad;
     private String ubicacion;
     
-    @Column(columnDefinition = "TEXT") 
+    @Column(columnDefinition = "TEXT") // Permite guardar textos muy largos, no solo 255 caracteres.
     private String descripcion;
     
     @Column(name = "foto")
     private String imagenUrl;
     
+    // updatable = false significa que una vez guardada la fecha de creación, nunca más se puede modificar.
     @Column(name = "fecha_publicacion", updatable = false) 
     private LocalDateTime creadoEn;
     
@@ -93,10 +102,11 @@ public class Mascota {
 
     public static Builder builder() { return new Builder(); }
     
+    // Método especial que se ejecuta justo antes de guardar la mascota por primera vez en la BD.
     @PrePersist
     protected void onCreate() {
         if (creadoEn == null) {
-            creadoEn = LocalDateTime.now();
+            creadoEn = LocalDateTime.now(); // Asigna la fecha y hora actual automáticamente.
         }
     }
     

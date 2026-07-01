@@ -5,25 +5,36 @@ import { useAuth } from '../context/AuthContext';
 import { MascotaDTO } from '../types';
 import { useNavigate, useLocation } from 'react-router-dom';
 
+/**
+ * Componente PetsSection (Sección de Mascotas)
+ * Muestra la lista de mascotas disponibles.
+ * Tiene un motor de búsqueda y filtros. Además, si el usuario viene de hacer el "Test de Compatibilidad" (encuesta),
+ * este componente ordena automáticamente las mascotas calculando un "Match Score" según sus respuestas.
+ */
 export default function PetsSection() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  // Si el usuario viene de la página de Encuesta, aquí tendremos sus respuestas guardadas.
   const surveyAnswers = location.state?.surveyAnswers as any;
 
   const [pets, setPets] = useState<MascotaDTO[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filtros
+  // Estados para los filtros (búsqueda de texto y categoría)
   const [searchText, setSearchText] = useState('');
   const [selectedType, setSelectedType] = useState<string>(surveyAnswers?.tipo || 'all');
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
 
+  // Al cargar el componente por primera vez, pide las mascotas al backend
   useEffect(() => {
     fetchPets();
-    if (user) fetchFavoriteIds();
+    if (user) fetchFavoriteIds(); // Si el usuario inició sesión, trae sus likes
   }, []);
 
+  /**
+   * Trae los IDs de las mascotas a las que el usuario le ha dado "Me gusta".
+   */
   const fetchFavoriteIds = async () => {
     try {
       const res = await fetch('/api/favoritos/ids', { credentials: 'include' });
@@ -36,6 +47,10 @@ export default function PetsSection() {
     }
   };
 
+  /**
+   * Trae TODAS las mascotas del backend, pero filtra en el frontend para no mostrar
+   * a los que ya fueron "ADOPTADOS".
+   */
   const fetchPets = async () => {
     try {
       setLoading(true);
@@ -51,6 +66,9 @@ export default function PetsSection() {
     }
   };
 
+  /**
+   * Dar / Quitar Like a una mascota.
+   */
   const toggleFavorite = async (id: number) => {
     if (!user) {
       navigate('/login');
@@ -81,7 +99,13 @@ export default function PetsSection() {
     setSelectedType('all');
   };
 
+  /**
+   * ESTE ES EL CEREBRO DE LA BÚSQUEDA Y LA ENCUESTA.
+   * `useMemo` significa que React solo vuelve a calcular esta lista si cambian las mascotas, 
+   * lo que escribes en la búsqueda, o tus respuestas de la encuesta.
+   */
   const filteredPets = useMemo(() => {
+    // 1. Filtro normal (Barra de búsqueda y botones de perro/gato)
     let result = pets.filter(pet => {
       const nombre = pet.nombre?.toLowerCase() || '';
       const raza = pet.raza?.toLowerCase() || '';
@@ -97,11 +121,14 @@ export default function PetsSection() {
       return textMatch && typeMatch;
     });
 
+    // 2. Si venimos de la Encuesta, aplicamos el Motor de "Match"
     if (surveyAnswers) {
       result = result.map(pet => {
-        let score = 50; // Base score
+        let score = 50; // Puntaje base
         
-        // Tipo match (usually handled by typeMatch filter, but adds score)
+        // --- Lógica del Algoritmo de Compatibilidad ---
+
+        // Si buscó perro y la mascota es perro, suma puntos
         if (surveyAnswers.tipo && pet.categoria?.toLowerCase() === surveyAnswers.tipo.toLowerCase()) {
           score += 20;
         }
@@ -139,13 +166,14 @@ export default function PetsSection() {
           }
         }
 
-        // Cap score between 10 and 99
+        // Cap score between 10 and 99 (para que no salga un 120% ni un -5%)
         score = Math.max(10, Math.min(99, score));
 
         return { ...pet, matchScore: score };
       });
 
-      // Sort by matchScore descending
+      // Finalmente, ordenamos la lista para que los que tengan mayor puntuación (MatchScore)
+      // aparezcan primero en la pantalla.
       result.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
     }
 

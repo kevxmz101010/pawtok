@@ -6,6 +6,11 @@ import { BlurFade } from '../components/ui/blur-fade';
 import { RainbowButton } from '../components/ui/rainbow-button';
 import { useAuth } from '../context/AuthContext';
 
+/**
+ * Formulario de Solicitud de Adopción (AdoptPet.tsx)
+ * Es la pantalla donde un Adoptante llena sus datos (ingresos, vivienda, cita, etc.)
+ * para aplicar a la adopción de una mascota específica.
+ */
 export default function AdoptPet() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -27,13 +32,16 @@ export default function AdoptPet() {
   const [otrasMascotas, setOtrasMascotas] = useState('');
   const [motivo, setMotivo] = useState('');
 
-  // Redirect if not authenticated
+  // Redirigir al Login si no ha iniciado sesión
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/login', { state: { returnUrl: `/adoptar/${id}` } });
     }
   }, [authLoading, isAuthenticated, navigate, id]);
 
+  /**
+   * Pide al backend la información del perrito para mostrarla al lado del formulario.
+   */
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchPet = async () => {
@@ -54,6 +62,10 @@ export default function AdoptPet() {
     }
   }, [id, navigate, isAuthenticated]);
 
+  /**
+   * Enviar el formulario.
+   * Empaqueta todas las respuestas en un "mensaje completo" y lo envía a la base de datos.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);

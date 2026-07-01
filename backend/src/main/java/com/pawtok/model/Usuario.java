@@ -5,6 +5,11 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
+/**
+ * Modelo Usuario (Entidad de Base de Datos)
+ * Representa a cualquier persona que se registra en Pawtok (ya sea Adoptante, Refugio o Admin).
+ * Hibernate lee esta clase para crear y mapear la tabla `usuarios` en MySQL.
+ */
 @Entity
 @Table(name = "usuarios")
 @Data
@@ -14,14 +19,20 @@ import java.time.LocalDateTime;
 public class Usuario {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_usuario")
-    private Long id;
+    private Long id; // Identificador único generado por MySQL
+    
     private String nombre;
-    @Column(unique = true) private String email;
-    @Column(name = "password") private String contrasena;
+    
+    @Column(unique = true) // Ningún otro usuario puede tener el mismo email
+    private String email;
+    
+    @Column(name = "password") // En MySQL se llama password, pero en Java lo llamamos contrasena
+    private String contrasena;
     
     @Column(name = "id_rol")
-    private Integer idRol;
+    private Integer idRol; // 1 = ADMIN, 2 = USUARIO (Adoptante), 3 = REFUGIO
     
+    // Anotación de Hibernate para que ponga la fecha actual automáticamente cuando se crea el usuario
     @CreationTimestamp @Column(name = "fecha_registro", updatable = false) private LocalDateTime creadoEn;
     private String bio;
     private String foto;

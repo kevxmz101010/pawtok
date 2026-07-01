@@ -77,7 +77,7 @@ public class OnboardingController {
 
     @PostMapping(value = "/refugio", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> onboardRefugio(
-            @RequestParam("logo") MultipartFile logo,
+            @RequestParam(value = "logo", required = false) MultipartFile logo,
             @RequestParam("certificado") MultipartFile certificado,
             @RequestParam("documentoRepresentante") MultipartFile documentoRepresentante,
             @RequestParam(value = "fotosLugar", required = false) List<MultipartFile> fotosLugar,
@@ -87,8 +87,8 @@ public class OnboardingController {
             @RequestParam("telefono") String telefono,
             @RequestParam("email") String emailRefugio,
             @RequestParam("descripcion") String descripcion,
-            @RequestParam("redesSociales") String redesSociales,
-            @RequestParam("horario") String horario) {
+            @RequestParam(value = "redesSociales", required = false, defaultValue = "") String redesSociales,
+            @RequestParam(value = "horario", required = false, defaultValue = "") String horario) {
 
         String emailAuth = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario usuario = usuarioRepository.findByEmail(emailAuth)

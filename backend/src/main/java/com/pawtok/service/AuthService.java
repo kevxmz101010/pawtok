@@ -17,14 +17,23 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 
+/**
+ * Servicio de Autenticación (AuthService)
+ * Se encarga del registro, inicio de sesión (login) y cierre de sesión (logout).
+ * Trabaja de la mano con Spring Security para recordar quién es el usuario mediante "Cookies de Sesión".
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
+    private final PasswordEncoder passwordEncoder; // Herramienta para encriptar las contraseñas
+    private final AuthenticationManager authenticationManager; // Revisa si el email y la contraseña coinciden
 
+    /**
+     * Registra un nuevo usuario en la base de datos.
+     * Encripta su contraseña para que, si alguien roba la base de datos, no pueda leerla.
+     */
     public UsuarioDTO register(RegistroDto registroDto) {
         if (usuarioRepository.findByEmail(registroDto.getEmail()).isPresent()) {
             throw new RuntimeException("El email ya está en uso");
@@ -42,6 +51,11 @@ public class AuthService {
         return mapToDto(usuario);
     }
 
+    /**
+     * Inicia la sesión del usuario.
+     * Si la contraseña es correcta, Spring Security guarda al usuario en el "SecurityContext".
+     * Luego, este método guarda ese contexto en la Cookie (HttpSession) que viajará al Frontend.
+     */
     public UsuarioDTO login(LoginDto loginDto, HttpServletRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getContrasena())
@@ -55,6 +69,9 @@ public class AuthService {
         return mapToDto(userDetails.getUsuario());
     }
 
+    /**
+     * Cierra la sesión, destruyendo la Cookie y limpiando la memoria del servidor.
+     */
     public void logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
@@ -63,6 +80,10 @@ public class AuthService {
         SecurityContextHolder.clearContext();
     }
 
+    /**
+     * Verifica quién es el usuario que tiene la sesión activa actualmente.
+     * Es muy usado por React cuando recargas la página para preguntar: "¿Sigo logueado? ¿Quién soy?".
+     */
     public UsuarioDTO getMe() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {

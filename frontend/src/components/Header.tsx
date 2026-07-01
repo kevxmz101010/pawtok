@@ -9,6 +9,12 @@ import { LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+/**
+ * Barra de Navegación Principal (Header.tsx)
+ * Aparece en la parte superior de casi todas las pantallas.
+ * Su diseño cambia si haces scroll hacia abajo (efecto cristal).
+ * Muestra diferentes opciones si estás logueado como Usuario, Refugio o Admin.
+ */
 interface HeaderProps {
   onShowToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onSelectDrop: (id: string) => void;
@@ -23,7 +29,10 @@ export default function Header({
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Handle scroll listener for the bouncing header animation
+  /**
+   * Efecto visual: Cuando el usuario hace scroll hacia abajo, 
+   * la barra de navegación se encoge y se vuelve de cristal borroso (glassmorphism).
+   */
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -32,6 +41,9 @@ export default function Header({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  /**
+   * Manejador del botón "Salir"
+   */
   const handleLogout = async () => {
     try {
       await logout();
@@ -95,10 +107,12 @@ export default function Header({
             </nav>
           </div>
 
-          {/* Right Side: Auth / User info */}
+          {/* Lado Derecho: Autenticación / Opciones de Usuario */}
           <div className="relative">
             {isAuthenticated && user ? (
               <div className="flex items-center gap-4">
+                
+                {/* Si eres un refugio, ves este botón rápido para publicar un perrito */}
                 {user.rol === 'REFUGIO' && (
                   <Link 
                     to="/dashboard/add-pet" 
@@ -107,6 +121,8 @@ export default function Header({
                     Agregar Mascota
                   </Link>
                 )}
+                
+                {/* Si eres Admin, ves tu panel secreto */}
                 {user.rol === 'ADMIN' && (
                   <Link 
                     to="/admin" 
@@ -116,6 +132,7 @@ export default function Header({
                   </Link>
                 )}
 
+                {/* Saludo personalizado que te lleva a tu perfil */}
                 <Link 
                   to={user.rol === 'REFUGIO' ? '/refugio' : user.rol === 'ADMIN' ? '/admin' : '/cuenta'} 
                   className="text-xs font-medium text-gray-700 hover:text-[#0B84FF] bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200/60 shadow-sm transition-colors cursor-pointer"
@@ -132,6 +149,7 @@ export default function Header({
                 </button>
               </div>
             ) : (
+              // Si NO estás logueado, muestra esto:
               <div className="flex items-center gap-4">
                 <Link to="/login" className="text-sm font-medium text-gray-900 hover:text-[#0B84FF] transition-colors block cursor-pointer">
                   Iniciar Sesión

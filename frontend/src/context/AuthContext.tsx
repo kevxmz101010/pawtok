@@ -12,6 +12,11 @@ interface AuthContextType {
   setUser: React.Dispatch<React.SetStateAction<UsuarioDTO | null>>;
 }
 
+/**
+ * Contexto de Autenticación (AuthContext.tsx)
+ * Este archivo es CRÍTICO para el Frontend. Es la memoria global de React que sabe si estás logueado o no.
+ * En lugar de tener que pasarle el "usuario" de componente a componente, esto lo hace disponible en toda la app.
+ */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -22,7 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sync user to localStorage whenever it changes
+  // Efecto Secundario: Cada vez que la variable `user` cambia (alguien hace login o logout),
+  // esto actualiza el localStorage para que no pierdas la sesión si cierras la pestaña.
   useEffect(() => {
     if (user) {
       localStorage.setItem('pawtok_user', JSON.stringify(user));
@@ -31,6 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  /**
+   * Verifica con el Backend si la Cookie de sesión sigue siendo válida.
+   * Se ejecuta automáticamente cuando abres la página web.
+   */
   const checkAuth = async () => {
     try {
       const response = await fetch('/api/auth/me', { credentials: 'include' });
@@ -56,9 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    checkAuth();
+    checkAuth(); // Llama a la verificación apenas carga la app
   }, []);
 
+  /**
+   * Envía tus credenciales al Backend para iniciar sesión.
+   */
   const login = async (credentials: LoginRequest) => {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
@@ -94,10 +107,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || 'Error al registrarse');
     }
-    // After successful registration, we need to login automatically
+    // Si el registro fue exitoso, hace login automáticamente sin pedirte la contraseña de nuevo
     await login({ email: data.email, contrasena: data.contrasena });
   };
 
+  /**
+   * Cierra sesión destruyendo la cookie en el Backend y borrando tu usuario en React.
+   */
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     setUser(null);
@@ -122,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
+  // Un "Hook" personalizado para que cualquier otro archivo pueda usar: const { user, logout } = useAuth();
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth debe ser usado dentro de un AuthProvider');

@@ -69,8 +69,9 @@ public class AuthService {
             return null;
         }
 
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        return mapToDto(userDetails.getUsuario());
+        String email = authentication.getName();
+        Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+        return usuario != null ? mapToDto(usuario) : null;
     }
 
     private UsuarioDTO mapToDto(Usuario usuario) {

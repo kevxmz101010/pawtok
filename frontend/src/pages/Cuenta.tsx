@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useConfirm } from '../context/ConfirmContext';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '../components/Header';
@@ -32,7 +33,8 @@ interface DashboardDTO {
 }
 
 export default function Cuenta() {
-  const { user, isAuthenticated, checkAuth } = useAuth();
+  const confirm = useConfirm();
+  const { user, isAuthenticated, checkAuth, setUser } = useAuth();
   const navigate = useNavigate();
 
   const [nombre, setNombre] = useState(user?.nombre || '');
@@ -92,7 +94,11 @@ export default function Cuenta() {
     if ((!newMessage.trim() && !newFile) || !selectedAdopcionId) return;
     try {
       const formData = new FormData();
-      if (newMessage.trim()) formData.append('contenido', newMessage);
+      if (newMessage.trim()) {
+        formData.append('contenido', newMessage);
+      } else if (newFile) {
+        formData.append('contenido', '[Archivo adjunto]');
+      }
       if (newFile) formData.append('archivo', newFile);
 
       const res = await fetch(`/api/mensajes/adopcion/${selectedAdopcionId}`, {
@@ -114,7 +120,7 @@ export default function Cuenta() {
   };
 
   const deleteAdopcion = async (adopcionId: number) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este registro del historial?")) return;
+    if (!await confirm("¿Seguro que deseas eliminar este registro del historial?")) return;
     try {
       const res = await fetch(`/api/adopciones/${adopcionId}`, { method: 'DELETE', credentials: 'include' });
       if (res.ok) {
@@ -222,7 +228,8 @@ export default function Cuenta() {
       });
 
       if (res.ok) {
-        await checkAuth(); // refresh user context
+        const updatedUser = await res.json();
+        setUser(updatedUser);
         showToast('¡Perfil actualizado correctamente!', 'success');
       } else {
         const errData = await res.json().catch(() => null);
@@ -275,7 +282,7 @@ export default function Cuenta() {
     if (foto) return URL.createObjectURL(foto);
     if (user.foto) {
       if (user.foto.startsWith('http')) return user.foto;
-      return `http://localhost:8080/uploads/${user.foto}`;
+      return `http://localhost:8080/uploads/${user.foto.split('/').pop()}`;
     }
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nombre)}&background=0B84FF&color=fff`;
   };

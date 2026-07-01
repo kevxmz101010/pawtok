@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useConfirm } from '../context/ConfirmContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -7,7 +8,8 @@ import FullscreenToast from '../components/FullscreenToast';
 import { BlurFade } from '../components/ui/blur-fade';
 
 export default function RefugioDashboard() {
-  const { user, isAuthenticated, logout, checkAuth } = useAuth();
+  const confirm = useConfirm();
+  const { user, isAuthenticated, logout, checkAuth, setUser } = useAuth();
   const navigate = useNavigate();
 
   const [nombre, setNombre] = useState(user?.nombre || '');
@@ -56,7 +58,7 @@ export default function RefugioDashboard() {
     if (foto) return URL.createObjectURL(foto);
     if (user?.foto) {
       if (user.foto.startsWith('http')) return user.foto;
-      return `http://localhost:8080/uploads/${user.foto}`;
+      return `http://localhost:8080/uploads/${user.foto.split('/').pop()}`;
     }
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.nombre || 'Refugio')}&background=0B84FF&color=fff`;
   };
@@ -116,7 +118,11 @@ export default function RefugioDashboard() {
     if (!newMessage.trim() && !newFile) return;
     try {
       const formData = new FormData();
-      if (newMessage.trim()) formData.append('contenido', newMessage);
+      if (newMessage.trim()) {
+        formData.append('contenido', newMessage);
+      } else if (newFile) {
+        formData.append('contenido', '[Archivo adjunto]');
+      }
       if (newFile) formData.append('archivo', newFile);
 
       const res = await fetch(`/api/mensajes/adopcion/${selectedSolicitud.id}`, {
@@ -158,7 +164,7 @@ export default function RefugioDashboard() {
   };
 
   const deleteAdopcion = async (adopcionId: number) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este registro del historial?")) return;
+    if (!await confirm("¿Seguro que deseas eliminar este registro del historial?")) return;
     try {
       const res = await fetch(`/api/adopciones/${adopcionId}`, { method: 'DELETE', credentials: 'include' });
       if (res.ok) {
@@ -185,7 +191,7 @@ export default function RefugioDashboard() {
   };
 
   const handleDeleteMascota = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta mascota?")) return;
+    if (!await confirm("¿Estás seguro de que deseas eliminar esta mascota?")) return;
     try {
       const res = await fetch(`/api/mascotas/${id}`, {
         method: 'DELETE',
@@ -235,7 +241,8 @@ export default function RefugioDashboard() {
       });
 
       if (res.ok) {
-        await checkAuth(); // refresh user context
+        const updatedUser = await res.json();
+        setUser(updatedUser);
         showToast('¡Perfil del refugio actualizado correctamente!', 'success');
       } else {
         const errData = await res.json().catch(() => null);

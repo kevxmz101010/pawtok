@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Onboarding from './pages/Onboarding';
@@ -19,7 +20,8 @@ import Encuesta from './pages/Encuesta';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <ConfirmProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Auth initialMode="login" />} />
@@ -38,7 +40,8 @@ export default function App() {
           <Route path="/refugio" element={<RefugioDashboard />} />
           <Route path="/encuesta" element={<Encuesta />} />
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+      </ConfirmProvider>
     </AuthProvider>
   );
 }

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useConfirm } from '../context/ConfirmContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BarChart, Users, Heart, PawPrint, CheckCircle, Clock, Mail } from 'lucide-react';
 import { BlurFade } from '../components/ui/blur-fade';
 
 const AdminDashboard = () => {
+  const confirm = useConfirm();
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
@@ -43,7 +45,7 @@ const AdminDashboard = () => {
   };
 
   const deleteUser = async (id: number) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
+    if (!await confirm("¿Seguro que deseas eliminar este usuario?")) return;
     try {
       const res = await fetch(`/api/admin/usuarios/${id}`, { method: 'DELETE', credentials: 'include' });
       if (res.ok) setUsuarios(usuarios.filter(u => u.id !== id));
@@ -53,7 +55,7 @@ const AdminDashboard = () => {
   };
 
   const deleteRefugio = async (id: number) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este refugio?")) return;
+    if (!await confirm("¿Seguro que deseas eliminar este refugio?")) return;
     try {
       const res = await fetch(`/api/admin/refugios/${id}`, { method: 'DELETE', credentials: 'include' });
       if (res.ok) setRefugios(refugios.filter(r => r.id !== id));

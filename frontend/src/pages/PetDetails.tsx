@@ -177,8 +177,17 @@ export default function PetDetails() {
 
         {/* MAP & SHELTER BOX */}
         <BlurFade delay={0.35} inView className="w-full mt-16 max-w-2xl mx-auto px-6">
-          <div className="bg-gray-50 rounded-[2.5rem] overflow-hidden border border-gray-100 flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-            <div className="h-64 relative bg-gray-100">
+          <div className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
+            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Ubicación del Refugio</h3>
+                <p className="text-sm text-gray-500 mt-1">{pet.ubicacion || 'Bogotá, Colombia'}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-[#0B84FF]">
+                <MapPin className="w-6 h-6" />
+              </div>
+            </div>
+            <div className="h-72 relative bg-gray-100">
               <iframe
                 src={`https://www.google.com/maps?q=${encodeURIComponent(pet.ubicacion || 'Bogotá, Colombia')}&output=embed`}
                 className="w-full h-full absolute inset-0"

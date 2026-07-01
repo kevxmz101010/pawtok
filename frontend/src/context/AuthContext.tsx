@@ -9,6 +9,7 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  setUser: React.Dispatch<React.SetStateAction<UsuarioDTO | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,7 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/auth/me', { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        setUser(data);
+        // HACK: Para evitar el problema de caché de sesión del backend (que devuelve datos viejos),
+        // solo actualizamos el estado si no teníamos datos previos, o si es un inicio de sesión nuevo.
+        setUser((prev) => {
+          if (prev && prev.id === data.id) {
+             return prev; // Mantenemos la versión de localStorage que tiene las ediciones más recientes
+          }
+          return data;
+        });
       } else {
         setUser(null);
       }
@@ -105,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         checkAuth,
+        setUser,
       }}
     >
       {children}

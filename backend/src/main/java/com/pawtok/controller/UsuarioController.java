@@ -27,7 +27,7 @@ public class UsuarioController {
     }
 
 
-    @PutMapping("/me/perfil")
+    @PostMapping("/me/perfil")
     public ResponseEntity<UsuarioDTO> updatePerfil(
             @RequestParam("nombre") String nombre,
             @RequestParam("email") String email,

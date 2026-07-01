@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useConfirm } from '../context/ConfirmContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BarChart, Users, PawPrint, CheckCircle, Mail, Check, X, FileText } from 'lucide-react';
 import { BlurFade } from '../components/ui/blur-fade';
 
 const AdminSolicitudesRefugio = () => {
+  const confirm = useConfirm();
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [solicitudes, setSolicitudes] = useState<any[]>([]);
@@ -30,7 +32,7 @@ const AdminSolicitudesRefugio = () => {
   };
 
   const resolverSolicitud = async (id: number, accion: 'aprobar' | 'rechazar') => {
-    if (!window.confirm(`¿Seguro que deseas ${accion} esta solicitud?`)) return;
+    if (!await confirm(`¿Seguro que deseas ${accion} esta solicitud?`)) return;
     try {
       const res = await fetch(`/api/admin/solicitudes-refugio/${id}/${accion}`, { 
         method: 'PUT', 

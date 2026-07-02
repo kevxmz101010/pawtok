@@ -222,7 +222,7 @@ export default function Cuenta() {
       if (foto) formData.append('foto', foto);
 
       const res = await fetch('/api/usuarios/me/perfil', {
-        method: 'PUT',
+        method: 'POST',
         credentials: 'include',
         body: formData,
       });

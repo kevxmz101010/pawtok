@@ -7,6 +7,12 @@ import Header from '../components/Header';
 import FullscreenToast from '../components/FullscreenToast';
 import { BlurFade } from '../components/ui/blur-fade';
 
+/**
+ * Dashboard del Refugio (RefugioDashboard.tsx)
+ * Este es el Panel de Control para las fundaciones y refugios.
+ * Desde aquí pueden ver estadísticas, aceptar solicitudes de adopción, chatear con adoptantes,
+ * y gestionar las mascotas que tienen publicadas.
+ */
 export default function RefugioDashboard() {
   const confirm = useConfirm();
   const { user, isAuthenticated, logout, checkAuth, setUser } = useAuth();
@@ -63,6 +69,9 @@ export default function RefugioDashboard() {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.nombre || 'Refugio')}&background=0B84FF&color=fff`;
   };
 
+  /**
+   * Carga inicial de datos: Trae las mascotas publicadas por este refugio y las solicitudes pendientes.
+   */
   useEffect(() => {
     const fetchDashboardData = async () => {
     try {
@@ -114,6 +123,9 @@ export default function RefugioDashboard() {
     }
   };
 
+  /**
+   * Lógica del Chat: Enviar un mensaje (texto o archivo) a un adoptante específico.
+   */
   const handleSendMessage = async () => {
     if (!newMessage.trim() && !newFile) return;
     try {
@@ -143,6 +155,9 @@ export default function RefugioDashboard() {
     }
   };
 
+  /**
+   * Aprueba o Rechaza una solicitud de adopción.
+   */
   const handleResolveAdopcion = async (id: number, estado: string) => {
     try {
       const res = await fetch(`/api/adopciones/${id}/resolver?estado=${estado}`, { method: 'PUT', credentials: 'include' });
@@ -235,7 +250,7 @@ export default function RefugioDashboard() {
       if (foto) formData.append('foto', foto);
 
       const res = await fetch('/api/usuarios/me/perfil', {
-        method: 'PUT',
+        method: 'POST',
         credentials: 'include',
         body: formData,
       });

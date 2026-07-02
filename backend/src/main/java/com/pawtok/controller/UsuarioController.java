@@ -12,6 +12,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
+/**
+ * Controlador de Usuarios
+ * Se encarga de manejar las peticiones web relacionadas con los perfiles de los usuarios
+ * (tanto adoptantes como refugios), como actualizar la foto de perfil o la contraseña.
+ */
 @RestController
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
@@ -27,6 +32,13 @@ public class UsuarioController {
     }
 
 
+    /**
+     * Endpoint para actualizar el perfil del usuario que tiene la sesión iniciada.
+     * @param nombre Nuevo nombre.
+     * @param email Nuevo correo.
+     * @param bio Nueva biografía.
+     * @param foto Nueva foto (archivo multipart enviado desde un formulario).
+     */
     @PostMapping("/me/perfil")
     public ResponseEntity<UsuarioDTO> updatePerfil(
             @RequestParam("nombre") String nombre,
@@ -72,6 +84,10 @@ public class UsuarioController {
         return ResponseEntity.ok(dto);
     }
 
+    /**
+     * Endpoint para cambiar la contraseña del usuario.
+     * @param body Objeto JSON que contiene 'current_password' y 'new_password'.
+     */
     @PutMapping("/me/password")
     public ResponseEntity<Map<String, String>> updatePassword(@RequestBody Map<String, String> body) {
         String currentPassword = body.get("current_password");

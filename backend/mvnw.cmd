@@ -29,7 +29,7 @@ echo ERROR: JAVA_HOME is set but java.exe was not found.
 exit /b 1
 
 :execute
-"%JAVA_EXE%" -jar %MAVEN_WRAPPER_JAR% %*
+"%JAVA_EXE%" -Dmaven.multiModuleProjectDirectory="%MAVEN_PROJECTBASEDIR%" -cp %MAVEN_WRAPPER_JAR% org.apache.maven.wrapper.MavenWrapperMain %*
 if ERRORLEVEL 1 goto error
 goto end
 

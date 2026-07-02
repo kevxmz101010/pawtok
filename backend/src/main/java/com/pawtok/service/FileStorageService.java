@@ -16,13 +16,21 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.Base64;
 
+/**
+ * Servicio de Almacenamiento de Archivos (FileStorageService)
+ * Este archivo es el responsable de guardar las fotos de los perritos o de los usuarios.
+ * Tiene una característica especial: funciona de dos maneras.
+ * 1. Local: Si estás probando en tu computadora, guarda las fotos en una carpeta llamada "uploads".
+ * 2. Nube: Si detecta la variable CLOUDINARY_URL (en Render), sube las fotos a Cloudinary automáticamente.
+ */
 @Service
 public class FileStorageService {
 
-    private final Path fileStorageLocation;
-    private Cloudinary cloudinary;
-    private final boolean useCloudinary;
+    private final Path fileStorageLocation; // Ruta de la carpeta local ("uploads")
+    private Cloudinary cloudinary; // Objeto para conectarse a Cloudinary
+    private final boolean useCloudinary; // Bandera: ¿Estamos usando la nube o local?
 
+    // Constructor: Aquí Spring inyecta la variable CLOUDINARY_URL si existe en tu application.properties o en Render.
     public FileStorageService(@Value("${cloudinary.url:}") String cloudinaryUrl) {
         this.fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
         try {
@@ -39,6 +47,10 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * Guarda un archivo MultipartFile (generalmente enviado desde un formulario tradicional).
+     * Retorna la URL pública si usó Cloudinary, o la ruta local si lo guardó en tu disco.
+     */
     public String storeFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return null;
@@ -46,7 +58,9 @@ public class FileStorageService {
 
         if (useCloudinary) {
             try {
+                // Sube el archivo a Cloudinary
                 Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap("resource_type", "auto"));
+                // Extrae la URL segura (https) que Cloudinary generó
                 return uploadResult.get("secure_url").toString();
             } catch (IOException ex) {
                 throw new RuntimeException("No se pudo subir a Cloudinary", ex);
@@ -68,6 +82,11 @@ public class FileStorageService {
         }
     }
 
+    /**
+     * Guarda una imagen que viene en formato Base64.
+     * React, en este proyecto, recorta la imagen y la envía como un string largo (Base64) en lugar de un archivo normal.
+     * Este método lee ese string, lo convierte a bytes de imagen real, y lo sube.
+     */
     public String storeBase64File(String base64String) {
         if (!StringUtils.hasText(base64String)) {
             return null;

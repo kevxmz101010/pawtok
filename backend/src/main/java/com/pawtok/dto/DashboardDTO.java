@@ -61,10 +61,12 @@ public class DashboardDTO {
         private String remitente;
         private String mensaje;
         private String fecha;
+        private Long adopcionId;
 
         public String getRemitente() { return remitente; } public void setRemitente(String val) { remitente = val; }
         public String getMensaje() { return mensaje; } public void setMensaje(String val) { mensaje = val; }
         public String getFecha() { return fecha; } public void setFecha(String val) { fecha = val; }
+        public Long getAdopcionId() { return adopcionId; } public void setAdopcionId(Long val) { adopcionId = val; }
 
         public static Builder builder() { return new Builder(); }
         public static class Builder {
@@ -72,6 +74,7 @@ public class DashboardDTO {
             public Builder remitente(String val) { obj.setRemitente(val); return this; }
             public Builder mensaje(String val) { obj.setMensaje(val); return this; }
             public Builder fecha(String val) { obj.setFecha(val); return this; }
+            public Builder adopcionId(Long val) { obj.setAdopcionId(val); return this; }
             public MensajeDTO build() { return obj; }
         }
     }

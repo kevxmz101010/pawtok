@@ -75,6 +75,7 @@ public class DashboardController {
                         .remitente(m.getRemitente().getNombre())
                         .mensaje(m.getMensaje())
                         .fecha(m.getFecha().toString())
+                        .adopcionId(m.getAdopcion() != null ? m.getAdopcion().getId() : null)
                         .build())
                 .collect(Collectors.toList());
 

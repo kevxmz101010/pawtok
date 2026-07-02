@@ -492,7 +492,9 @@ export default function Cuenta() {
                         <div className="space-y-4 overflow-y-auto flex-1">
                           {dashboard?.mensajes && dashboard.mensajes.length > 0 ? (
                             dashboard.mensajes.map((msg, idx) => (
-                              <div key={idx} className="flex items-start gap-4 p-4 rounded-2xl bg-white/50 border border-white shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                              <div key={idx} 
+                                   onClick={() => { if (msg.adopcionId) setSelectedAdopcionId(msg.adopcionId); }}
+                                   className={`flex items-start gap-4 p-4 rounded-2xl bg-white/50 border border-white shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] ${msg.adopcionId ? 'cursor-pointer hover:bg-white transition' : ''}`}>
                                 <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#0B84FF] font-bold flex-shrink-0 shadow-sm border border-white/60">
                                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                 </div>

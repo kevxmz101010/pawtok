@@ -6,7 +6,9 @@ import com.pawtok.model.Mensaje;
 import com.pawtok.model.Usuario;
 import com.pawtok.repository.AdopcionRepository;
 import com.pawtok.repository.MensajeRepository;
+import com.pawtok.repository.RefugioRepository;
 import com.pawtok.repository.UsuarioRepository;
+import com.pawtok.model.Refugio;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +24,7 @@ public class MensajeService {
     private final MensajeRepository mensajeRepository;
     private final AdopcionRepository adopcionRepository;
     private final UsuarioRepository usuarioRepository;
+    private final RefugioRepository refugioRepository;
     private final FileStorageService fileStorageService;
 
     public List<MensajeDTO> getMensajesPorAdopcion(Long adopcionId, String emailUser) {
@@ -32,8 +35,17 @@ public class MensajeService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
                 
         // Validar permisos (debe ser el adoptante o el refugio)
+        Long idRefugio = adopcion.getMascota().getIdRefugio();
+        Long idUsuarioRefugio = -1L;
+        if (idRefugio != null) {
+            Refugio refugio = refugioRepository.findById(idRefugio).orElse(null);
+            if (refugio != null) {
+                idUsuarioRefugio = refugio.getIdUsuario();
+            }
+        }
+
         if (!adopcion.getUsuario().getId().equals(usuario.getId()) &&
-            !adopcion.getMascota().getIdRefugio().equals(usuario.getId()) &&
+            !idUsuarioRefugio.equals(usuario.getId()) &&
             !usuario.getRol().name().equals("ADMIN")) {
             throw new RuntimeException("No tienes permiso para ver estos mensajes");
         }
@@ -53,8 +65,11 @@ public class MensajeService {
         Usuario receptor;
         if (adopcion.getUsuario().getId().equals(remitente.getId())) {
             // El remitente es el adoptante, el receptor es el refugio
-            receptor = usuarioRepository.findById(adopcion.getMascota().getIdRefugio())
+            Long idRefugio = adopcion.getMascota().getIdRefugio();
+            Refugio refugio = refugioRepository.findById(idRefugio)
                     .orElseThrow(() -> new RuntimeException("Refugio no encontrado"));
+            receptor = usuarioRepository.findById(refugio.getIdUsuario())
+                    .orElseThrow(() -> new RuntimeException("Usuario dueño del refugio no encontrado"));
         } else {
             // El remitente es el refugio, el receptor es el adoptante
             receptor = adopcion.getUsuario();

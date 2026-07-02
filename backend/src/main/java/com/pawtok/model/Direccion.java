@@ -1,4 +1,5 @@
 package com.pawtok.model;
+import com.pawtok.model.enums.*;
 import jakarta.persistence.*;
 
 @Entity

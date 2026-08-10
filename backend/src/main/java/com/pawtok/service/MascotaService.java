@@ -7,6 +7,9 @@ import com.pawtok.model.enums.Rol;
 import com.pawtok.model.Usuario;
 import com.pawtok.repository.MascotaRepository;
 import com.pawtok.repository.UsuarioRepository;
+import com.pawtok.model.AuditoriaMascotaEliminada;
+import com.pawtok.repository.AuditoriaMascotaEliminadaRepository;
+import com.pawtok.repository.MascotaImagenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +31,9 @@ public class MascotaService {
     private final UsuarioRepository usuarioRepository;
     private final com.pawtok.repository.RefugioRepository refugioRepository;
     private final FileStorageService fileStorageService;
+    private final AuditoriaMascotaEliminadaRepository auditoriaMascotaEliminadaRepository;
+    private final MascotaImagenRepository mascotaImagenRepository;
+    private final RegistroActividadService registroActividadService;
 
     /**
      * Trae TODAS las mascotas de la base de datos.
@@ -121,7 +127,9 @@ public class MascotaService {
                 .build();
 
         // 4. Guardarlo y retornar el DTO
-        return mapToDto(mascotaRepository.save(mascota));
+        Mascota saved = mascotaRepository.save(mascota);
+        registroActividadService.registrar(usuario.getId(), "CREAR_MASCOTA", "Mascota creada: " + saved.getNombre());
+        return mapToDto(saved);
     }
 
     /**
@@ -185,7 +193,9 @@ public class MascotaService {
         mascota.setGaleria(galeriaStr);
         mascota.setUbicacion(mascotaDto.getUbicacion());
 
-        return mapToDto(mascotaRepository.save(mascota));
+        Mascota saved = mascotaRepository.save(mascota);
+        registroActividadService.registrar(usuario.getId(), "EDITAR_MASCOTA", "Mascota editada: " + saved.getNombre());
+        return mapToDto(saved);
     }
 
     public MascotaDTO updateEstado(Long id, EstadoMascota estado, String usuarioEmail) {
@@ -219,6 +229,15 @@ public class MascotaService {
         if (!isOwner && usuario.getRol() != Rol.ADMIN) {
             throw new RuntimeException("No autorizado para eliminar esta mascota");
         }
+
+        auditoriaMascotaEliminadaRepository.save(AuditoriaMascotaEliminada.builder()
+                .idMascotaOriginal(mascota.getId().intValue())
+                .nombreMascota(mascota.getNombre())
+                .idUsuarioElimina(usuario.getId().intValue())
+                .fechaEliminacion(java.time.LocalDateTime.now())
+                .build());
+
+        registroActividadService.registrar(usuario.getId(), "ELIMINAR_MASCOTA", "Mascota eliminada: " + mascota.getNombre());
 
         mascotaRepository.delete(mascota);
     }

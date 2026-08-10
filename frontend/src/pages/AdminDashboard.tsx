@@ -16,6 +16,7 @@ const AdminDashboard = () => {
   
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [refugios, setRefugios] = useState<any[]>([]);
+  const [actividad, setActividad] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,6 +37,9 @@ const AdminDashboard = () => {
 
       const resRefugios = await fetch('/api/admin/refugios', { credentials: 'include' });
       if (resRefugios.ok) setRefugios(await resRefugios.json());
+      
+      const resAct = await fetch('/api/admin/actividad', { credentials: 'include' });
+      if (resAct.ok) setActividad(await resAct.json());
       
       setLoading(false);
     } catch (err) {
@@ -235,6 +239,43 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
+
+          <BlurFade delay={0.2} inView>
+            <div className="mt-8 bg-white/80 backdrop-blur-xl border border-white rounded-3xl shadow-[0px_10px_25px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-bold text-xl text-gray-900">Actividad Reciente</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead className="text-gray-400 text-xs font-bold uppercase bg-gray-50/50">
+                    <tr>
+                      <th className="px-6 py-3">Fecha</th>
+                      <th className="px-6 py-3">Usuario</th>
+                      <th className="px-6 py-3">Acción</th>
+                      <th className="px-6 py-3">Detalles</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {actividad.slice(0, 20).map((act, idx) => (
+                      <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}>
+                        <td className="px-6 py-3 text-sm text-gray-500 whitespace-nowrap">{new Date(act.fecha).toLocaleString()}</td>
+                        <td className="px-6 py-3 font-semibold text-gray-900">{act.nombreUsuario}</td>
+                        <td className="px-6 py-3 text-sm">
+                          <span className="px-2 py-1 rounded-md bg-blue-50 text-blue-700 font-medium">{act.accion}</span>
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-600">{act.detalles}</td>
+                      </tr>
+                    ))}
+                    {actividad.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-gray-400 text-sm">No hay actividad reciente</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </BlurFade>
         </BlurFade>
       </main>
     </div>

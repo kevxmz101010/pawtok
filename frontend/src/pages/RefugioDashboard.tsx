@@ -38,6 +38,8 @@ export default function RefugioDashboard() {
   const [publicaciones, setPublicaciones] = useState<any[]>([]);
   const [solicitudes, setSolicitudes] = useState<any[]>([]);
   const [selectedSolicitud, setSelectedSolicitud] = useState<any>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [citas, setCitas] = useState<any[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
 
   // Chat state
@@ -92,6 +94,19 @@ export default function RefugioDashboard() {
           adoptadas: currentMascotas.filter((m: any) => m.estado === 'ADOPTADO').length,
           solicitudes: adopData.length
         });
+        
+        try {
+          const allCitas = [];
+          for (const m of currentMascotas) {
+            const resCita = await fetch(`/api/citas/mascota/${m.id}`, { credentials: 'include' });
+            if (resCita.ok) {
+              const data = await resCita.json();
+              allCitas.push(...data.map((c: any) => ({ ...c, mascotaNombre: m.nombre })));
+            }
+          }
+          setCitas(allCitas);
+        } catch (err) { console.error('Error fetching citas', err); }
+
       } catch (err) {
         console.error("Error fetching dashboard data", err);
       } finally {
@@ -103,13 +118,29 @@ export default function RefugioDashboard() {
     }
   }, [isAuthenticated, page, size]);
 
+  // Seguimiento state for approved adoptions
+  const [seguimientoList, setSeguimientoList] = useState<any[]>([]);
+
   useEffect(() => {
     if (selectedSolicitud) {
       fetchMensajes(selectedSolicitud.id);
+      fetchSeguimiento(selectedSolicitud.id);
     } else {
       setMensajes([]);
+      setSeguimientoList([]);
     }
   }, [selectedSolicitud]);
+
+  const fetchSeguimiento = async (adopcionId: number) => {
+    try {
+      const res = await fetch(`/api/adopciones/${adopcionId}/seguimiento`, { credentials: 'include' });
+      if (res.ok) {
+        setSeguimientoList(await res.json());
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchMensajes = async (adopcionId: number) => {
     try {
@@ -492,6 +523,74 @@ export default function RefugioDashboard() {
               </div>
             </BlurFade>
 
+            {/* CITAS PROGRAMADAS */}
+            <BlurFade delay={0.27} inView>
+              <div className="bg-gray-100/30 backdrop-blur-xl border border-white/60 rounded-3xl shadow-[0px_15px_35px_-10px_rgba(0,0,0,0.05),inset_0px_0px_15px_rgba(255,255,255,1)] overflow-hidden mt-6 mb-6">
+                <div className="p-6 border-b border-white/50 flex items-center justify-between">
+                  <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z"/></svg>
+                    </span>
+                    Citas Programadas
+                  </h3>
+                  <span className="text-sm bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full font-bold">{citas.length} Citas</span>
+                </div>
+                
+                {citas.length > 0 ? (
+                  <div className="overflow-x-auto p-2">
+                    <table className="w-full text-left border-separate border-spacing-y-2">
+                      <thead className="text-gray-500 text-xs uppercase px-4">
+                        <tr>
+                          <th className="px-6 py-3 font-semibold">Fecha y Hora</th>
+                          <th className="px-6 py-3 font-semibold">Solicitante</th>
+                          <th className="px-6 py-3 font-semibold">Mascota</th>
+                          <th className="px-6 py-3 font-semibold text-center">Estado</th>
+                          <th className="px-6 py-3 font-semibold text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {citas.map((cita: any) => (
+                          <tr key={cita.id} className="bg-white/40 hover:bg-white/70 transition rounded-2xl shadow-sm">
+                            <td className="px-6 py-4 rounded-l-2xl font-medium text-gray-900">
+                              {cita.fecha} a las {cita.hora}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="font-bold text-gray-900 block">{cita.nombreSolicitante}</span>
+                              <span className="text-xs text-gray-500">{cita.telefono}</span>
+                            </td>
+                            <td className="px-6 py-4 font-semibold text-[#0B84FF]">{cita.mascotaNombre}</td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`inline-flex py-1 px-3 rounded-full text-xs font-bold ${cita.estado === 'aprobada' ? 'bg-green-50 text-green-600' : cita.estado === 'rechazada' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-600'}`}>
+                                {cita.estado}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right rounded-r-2xl">
+                              <div className="flex justify-end gap-2">
+                                {cita.estado === 'pendiente' && (
+                                  <>
+                                    <button onClick={async () => {
+                                      const res = await fetch(`/api/citas/${cita.id}/estado?estado=aprobada`, { method: 'PUT', credentials: 'include' });
+                                      if (res.ok) setCitas(citas.map(c => c.id === cita.id ? {...c, estado: 'aprobada'} : c));
+                                    }} className="px-3 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-bold hover:bg-green-100 transition">Aprobar</button>
+                                    <button onClick={async () => {
+                                      const res = await fetch(`/api/citas/${cita.id}/estado?estado=rechazada`, { method: 'PUT', credentials: 'include' });
+                                      if (res.ok) setCitas(citas.map(c => c.id === cita.id ? {...c, estado: 'rechazada'} : c));
+                                    }} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-500 text-xs font-bold hover:bg-red-100 transition">Rechazar</button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-gray-500 text-sm">No hay citas programadas.</div>
+                )}
+              </div>
+            </BlurFade>
+
             {/* TABLA DE PUBLICACIONES */}
             <BlurFade delay={0.3} inView>
               <div className="bg-gray-100/30 backdrop-blur-xl border border-white/60 rounded-3xl shadow-[0px_15px_35px_-10px_rgba(0,0,0,0.05),inset_0px_0px_15px_rgba(255,255,255,1)] overflow-hidden">
@@ -697,6 +796,56 @@ export default function RefugioDashboard() {
                   </div>
                 </div>
 
+              {/* REPORTES DE SEGUIMIENTO POST-ADOPCIÓN */}
+              <div className="border-t border-gray-100 pt-4">
+                <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    Reportes de Seguimiento Post-Adopción
+                  </span>
+                  <span className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold">
+                    {seguimientoList.length} Reportes
+                  </span>
+                </h4>
+                {seguimientoList.length > 0 ? (
+                  <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                    {seguimientoList.map((seg, sIdx) => (
+                      <div key={sIdx} className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-2">
+                        <div className="flex justify-between items-center text-xs text-gray-500 font-semibold">
+                          <span>📅 {new Date(seg.fecha).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-sm text-gray-700">{seg.comentario}</p>
+                        {(seg.fotoOpcional || seg.foto_opcional) && (
+                          <img
+                            src={
+                              (seg.fotoOpcional || seg.foto_opcional).startsWith('http')
+                                ? (seg.fotoOpcional || seg.foto_opcional)
+                                : (seg.fotoOpcional || seg.foto_opcional).startsWith('/')
+                                ? `http://localhost:8080${seg.fotoOpcional || seg.foto_opcional}`
+                                : `http://localhost:8080/uploads/${seg.fotoOpcional || seg.foto_opcional}`
+                            }
+                            alt="Foto de seguimiento"
+                            onClick={() => setPreviewImage(
+                              (seg.fotoOpcional || seg.foto_opcional).startsWith('http')
+                                ? (seg.fotoOpcional || seg.foto_opcional)
+                                : (seg.fotoOpcional || seg.foto_opcional).startsWith('/')
+                                ? `http://localhost:8080${seg.fotoOpcional || seg.foto_opcional}`
+                                : `http://localhost:8080/uploads/${seg.fotoOpcional || seg.foto_opcional}`
+                            )}
+                            className="w-full max-h-48 object-cover rounded-xl mt-1 shadow-sm cursor-pointer hover:opacity-90 transition hover:scale-[1.01]"
+                            title="Haz clic para agrandar la foto"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center bg-gray-50 rounded-2xl text-xs text-gray-400 font-medium">
+                    El adoptante aún no ha subido reportes de seguimiento.
+                  </div>
+                )}
+              </div>
+
               <div>
                 <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-green-500"></span>
@@ -754,6 +903,31 @@ export default function RefugioDashboard() {
                   <button onClick={() => handleResolveAdopcion(selectedSolicitud.id, 'APROBADA')} className="px-5 py-2 rounded-full bg-[#0B84FF] hover:bg-blue-600 text-white font-bold transition-colors shadow-md text-sm">Aprobar Adopción</button>
                )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE IMAGEN AMPLIADA */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] p-2 bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center">
+            <img
+              src={previewImage}
+              alt="Vista ampliada"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl"
+            />
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-4 right-4 bg-black/60 text-white rounded-full p-2.5 hover:bg-black transition-colors shadow-lg"
+              title="Cerrar"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
       )}

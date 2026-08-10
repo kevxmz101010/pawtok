@@ -29,6 +29,7 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder; // Herramienta para encriptar las contraseñas
     private final AuthenticationManager authenticationManager; // Revisa si el email y la contraseña coinciden
+    private final RegistroActividadService registroActividadService;
 
     /**
      * Registra un nuevo usuario en la base de datos.
@@ -46,9 +47,10 @@ public class AuthService {
                 .rol(registroDto.getRol() != null ? registroDto.getRol() : com.pawtok.model.enums.Rol.USUARIO)
                 .build();
 
-        usuarioRepository.save(usuario);
+        Usuario saved = usuarioRepository.save(usuario);
+        registroActividadService.registrar(saved.getId(), "REGISTRO", "Nuevo usuario registrado");
 
-        return mapToDto(usuario);
+        return mapToDto(saved);
     }
 
     /**
@@ -66,7 +68,9 @@ public class AuthService {
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        return mapToDto(userDetails.getUsuario());
+        Usuario usuario = userDetails.getUsuario();
+        registroActividadService.registrar(usuario.getId(), "LOGIN", "Inicio de sesión");
+        return mapToDto(usuario);
     }
 
     /**

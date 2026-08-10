@@ -27,6 +27,7 @@ public class AdopcionService {
     private final MascotaRepository mascotaRepository;
     private final UsuarioRepository usuarioRepository;
     private final RefugioRepository refugioRepository;
+    private final RegistroActividadService registroActividadService;
 
     public AdopcionDTO solicitarAdopcion(AdopcionDTO adopcionDto, String usuarioEmail) {
         Usuario usuario = usuarioRepository.findByEmail(usuarioEmail)
@@ -57,7 +58,9 @@ public class AdopcionService {
         // No longer changing pet status to EN_PROCESO. It stays DISPONIBLE until approved.
         mascotaRepository.save(mascota);
 
-        return mapToDto(adopcionRepository.save(adopcion));
+        Adopcion saved = adopcionRepository.save(adopcion);
+        registroActividadService.registrar(usuario.getId(), "SOLICITAR_ADOPCION", "Solicitud de adopción para mascota: " + mascota.getNombre());
+        return mapToDto(saved);
     }
 
     public List<AdopcionDTO> getAdopcionesByUsuario(String usuarioEmail) {
@@ -102,7 +105,9 @@ public class AdopcionService {
         }
         mascotaRepository.save(mascota);
 
-        return mapToDto(adopcionRepository.save(adopcion));
+        Adopcion saved = adopcionRepository.save(adopcion);
+        registroActividadService.registrar(refugioUser.getId(), "RESOLVER_ADOPCION", "Adopción " + nuevoEstado + " para mascota ID: " + saved.getMascota().getId());
+        return mapToDto(saved);
     }
 
     public void eliminarAdopcion(Long id, String usuarioEmail) {

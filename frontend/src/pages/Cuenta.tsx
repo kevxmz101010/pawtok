@@ -41,6 +41,7 @@ export default function Cuenta() {
   const [email, setEmail] = useState(user?.email || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [foto, setFoto] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -69,6 +70,50 @@ export default function Cuenta() {
   const [newMessage, setNewMessage] = useState('');
   const [newFile, setNewFile] = useState<File | null>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  
+  // Seguimiento State
+  const [expandedSeguimiento, setExpandedSeguimiento] = useState<number | null>(null);
+  const [seguimientoRecords, setSeguimientoRecords] = useState<any[]>([]);
+  const [newSegFecha, setNewSegFecha] = useState('');
+  const [newSegComentario, setNewSegComentario] = useState('');
+  const [newSegFoto, setNewSegFoto] = useState<File | null>(null);
+
+  const toggleSeguimiento = async (adopcionId: number) => {
+    if (expandedSeguimiento === adopcionId) {
+      setExpandedSeguimiento(null);
+    } else {
+      setExpandedSeguimiento(adopcionId);
+      try {
+        const res = await fetch(`/api/adopciones/${adopcionId}/seguimiento`, { credentials: 'include' });
+        if (res.ok) {
+          setSeguimientoRecords(await res.json());
+        }
+      } catch (err) {}
+    }
+  };
+
+  const handleAddSeguimiento = async (e: React.FormEvent, adopcionId: number) => {
+    e.preventDefault();
+    try {
+      const fd = new FormData();
+      fd.append('fecha', newSegFecha);
+      fd.append('comentario', newSegComentario);
+      if (newSegFoto) fd.append('foto', newSegFoto);
+      
+      const res = await fetch(`/api/adopciones/${adopcionId}/seguimiento`, { method: 'POST', credentials: 'include', body: fd });
+      if (res.ok) {
+        showToast('Seguimiento añadido', 'success');
+        setNewSegFecha('');
+        setNewSegComentario('');
+        setNewSegFoto(null);
+        // refetch
+        const resList = await fetch(`/api/adopciones/${adopcionId}/seguimiento`, { credentials: 'include' });
+        if (resList.ok) setSeguimientoRecords(await resList.json());
+      } else {
+        showToast('Error al añadir', 'error');
+      }
+    } catch (err) { showToast('Error al añadir', 'error'); }
+  };
 
   useEffect(() => {
     if (selectedAdopcionId) {
@@ -419,12 +464,67 @@ export default function Cuenta() {
                         {activeTab === 'adoptadas' && (
                           dashboard?.recientes && dashboard.recientes.filter(sol => sol.estado.toLowerCase() === 'aprobada').length > 0 ? (
                             dashboard.recientes.filter(sol => sol.estado.toLowerCase() === 'aprobada').map((sol, idx) => (
-                              <div key={idx} onClick={() => setSelectedAdopcionId(sol.adopcionId)} className="flex items-center gap-4 pb-4 border-b border-white/40 last:border-0 last:pb-0 cursor-pointer hover:bg-white/40 p-2 rounded-xl transition">
-                                <img src={sol.fotoMascota ? (sol.fotoMascota.startsWith('http') ? sol.fotoMascota : `http://localhost:8080/uploads/${sol.fotoMascota.split('/').pop()}`) : "https://via.placeholder.com/100"} className="w-14 h-14 rounded-xl object-cover" alt="Mascota" />
-                                <div className="flex-1">
-                                  <h4 className="font-bold text-gray-800">{sol.mascota}</h4>
-                                  <p className="text-xs text-green-600 font-semibold">¡Adoptada con éxito!</p>
+                              <div key={idx} className="flex flex-col gap-2 pb-4 border-b border-white/40 last:border-0 last:pb-0 transition">
+                                <div className="flex items-center gap-4 hover:bg-white/40 p-2 rounded-xl cursor-pointer" onClick={() => setSelectedAdopcionId(sol.adopcionId)}>
+                                  <img src={sol.fotoMascota ? (sol.fotoMascota.startsWith('http') ? sol.fotoMascota : `http://localhost:8080/uploads/${sol.fotoMascota.split('/').pop()}`) : "https://via.placeholder.com/100"} className="w-14 h-14 rounded-xl object-cover" alt="Mascota" />
+                                  <div className="flex-1">
+                                    <h4 className="font-bold text-gray-800">{sol.mascota}</h4>
+                                    <p className="text-xs text-green-600 font-semibold">¡Adoptada con éxito!</p>
+                                  </div>
+                                  <button onClick={(e) => { e.stopPropagation(); toggleSeguimiento(sol.adopcionId); }} className="px-3 py-1.5 bg-blue-50 text-[#0B84FF] rounded-lg text-xs font-bold hover:bg-blue-100 transition">
+                                    {expandedSeguimiento === sol.adopcionId ? 'Ocultar Seguimiento' : 'Ver Seguimiento'}
+                                  </button>
                                 </div>
+                                
+                                {expandedSeguimiento === sol.adopcionId && (
+                                  <div className="bg-white/60 p-4 rounded-xl shadow-inner mt-2">
+                                    <h5 className="font-bold text-sm text-gray-800 mb-3">Registros de Seguimiento</h5>
+                                    
+                                    <div className="space-y-3 mb-4 max-h-48 overflow-y-auto pr-2">
+                                      {seguimientoRecords.length > 0 ? seguimientoRecords.map((seg, i) => (
+                                        <div key={i} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex gap-3">
+                                          {(seg.fotoOpcional || seg.foto_opcional) && (
+                                            <img
+                                              src={
+                                                (seg.fotoOpcional || seg.foto_opcional).startsWith('http')
+                                                  ? (seg.fotoOpcional || seg.foto_opcional)
+                                                  : (seg.fotoOpcional || seg.foto_opcional).startsWith('/')
+                                                  ? `http://localhost:8080${seg.fotoOpcional || seg.foto_opcional}`
+                                                  : `http://localhost:8080/uploads/${seg.fotoOpcional || seg.foto_opcional}`
+                                              }
+                                              onClick={() => setPreviewImage(
+                                                (seg.fotoOpcional || seg.foto_opcional).startsWith('http')
+                                                  ? (seg.fotoOpcional || seg.foto_opcional)
+                                                  : (seg.fotoOpcional || seg.foto_opcional).startsWith('/')
+                                                  ? `http://localhost:8080${seg.fotoOpcional || seg.foto_opcional}`
+                                                  : `http://localhost:8080/uploads/${seg.fotoOpcional || seg.foto_opcional}`
+                                              )}
+                                              alt="Seguimiento"
+                                              className="w-16 h-16 rounded-md object-cover cursor-pointer hover:opacity-80 transition hover:scale-105"
+                                              title="Haz clic para agrandar"
+                                            />
+                                          )}
+                                          <div>
+                                            <p className="text-xs font-bold text-gray-500 mb-1">{seg.fecha}</p>
+                                            <p className="text-sm text-gray-800">{seg.comentario}</p>
+                                          </div>
+                                        </div>
+                                      )) : (
+                                        <p className="text-xs text-gray-500 italic">No hay registros aún.</p>
+                                      )}
+                                    </div>
+
+                                    <form onSubmit={(e) => handleAddSeguimiento(e, sol.adopcionId)} className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                      <h6 className="text-xs font-bold text-[#0B84FF] mb-2">Añadir Nuevo Registro</h6>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                                        <input type="date" value={newSegFecha} onChange={e => setNewSegFecha(e.target.value)} required className="text-xs px-2 py-1.5 rounded-md border border-gray-200 outline-none focus:border-[#0B84FF]" />
+                                        <input type="file" accept="image/*" onChange={e => setNewSegFoto(e.target.files?.[0] || null)} className="text-xs" />
+                                      </div>
+                                      <textarea value={newSegComentario} onChange={e => setNewSegComentario(e.target.value)} required placeholder="Comentario..." rows={2} className="w-full text-xs px-2 py-1.5 rounded-md border border-gray-200 outline-none focus:border-[#0B84FF] mb-2 resize-none" />
+                                      <button type="submit" className="px-3 py-1.5 bg-[#0B84FF] text-white text-xs font-bold rounded-md hover:bg-blue-600 transition">Guardar</button>
+                                    </form>
+                                  </div>
+                                )}
                               </div>
                             ))
                           ) : (
@@ -575,6 +675,30 @@ export default function Cuenta() {
           </BlurFade>
         </div>
       </main>
+      {/* MODAL DE IMAGEN AMPLIADA */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] p-2 bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center">
+            <img
+              src={previewImage}
+              alt="Vista ampliada"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl"
+            />
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-4 right-4 bg-black/60 text-white rounded-full p-2.5 hover:bg-black transition-colors shadow-lg"
+              title="Cerrar"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

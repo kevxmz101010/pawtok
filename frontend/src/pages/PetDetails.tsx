@@ -1,19 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin, Home } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Home, Syringe, Bug, Calendar, FileText, Check, Plus, X } from 'lucide-react';
 import Notification from '../components/Notification';
 import { ToastMessage, MascotaDTO } from '../types';
 import { RainbowButton } from '../components/ui/rainbow-button';
 import { BlurFade } from '../components/ui/blur-fade';
 import { Carousel, CarouselIndicator } from '../components/ui/simple-carousel';
 import Autoplay from 'embla-carousel-autoplay';
+import { useAuth } from '../context/AuthContext';
 
 export default function PetDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [pet, setPet] = useState<MascotaDTO | null>(null);
+  const [historial, setHistorial] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Add Medical Record State
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newFecha, setNewFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [newDesc, setNewDesc] = useState('');
+  const [newVacuna, setNewVacuna] = useState(false);
+  const [newDesparasitacion, setNewDesparasitacion] = useState(false);
+  const [isSubmittingHistorial, setIsSubmittingHistorial] = useState(false);
 
   const handleShowToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const nextToast: ToastMessage = {
@@ -50,6 +61,14 @@ export default function PetDetails() {
             creadoEn: new Date().toISOString()
           });
         }
+        
+        try {
+          const resHistorial = await fetch(`/api/mascotas/${id}/historial`);
+          if (resHistorial.ok) {
+            setHistorial(await resHistorial.json());
+          }
+        } catch (e) { console.error('Error fetching historial:', e); }
+
       } catch (err) {
         console.error('Error fetching pet details:', err);
       } finally {
@@ -265,6 +284,162 @@ export default function PetDetails() {
 
           </BlurFade>
         )}
+
+        {/* HISTORIAL MÉDICO */}
+        <BlurFade delay={0.45} inView className="w-full mt-4 mb-10 max-w-2xl mx-auto px-6">
+          <div className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
+            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Historial Médico</h3>
+                <p className="text-sm text-gray-500 mt-1">Registro de vacunas y tratamientos</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {user && (
+                  <button
+                    onClick={() => setShowAddForm(!showAddForm)}
+                    className="px-4 py-2 bg-blue-50 text-blue-600 font-bold rounded-xl hover:bg-blue-100 transition text-sm flex items-center gap-1.5"
+                  >
+                    {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    {showAddForm ? 'Cancelar' : 'Agregar Registro'}
+                  </button>
+                )}
+                <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-500">
+                  <FileText className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            {/* FORMULARIO AGREGAR REGISTRO MÉDICO */}
+            {showAddForm && (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!newDesc.trim()) return;
+                  setIsSubmittingHistorial(true);
+                  try {
+                    const res = await fetch(`/api/mascotas/${id}/historial`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({
+                        fecha: newFecha,
+                        descripcion: newDesc,
+                        vacuna: newVacuna,
+                        desparasitacion: newDesparasitacion
+                      })
+                    });
+                    if (res.ok) {
+                      handleShowToast('Registro médico agregado con éxito', 'success');
+                      setNewDesc('');
+                      setShowAddForm(false);
+                      const resH = await fetch(`/api/mascotas/${id}/historial`);
+                      if (resH.ok) setHistorial(await resH.json());
+                    } else {
+                      handleShowToast('Error al guardar el registro médico', 'error');
+                    }
+                  } catch (err) {
+                    handleShowToast('Error de conexión', 'error');
+                  } finally {
+                    setIsSubmittingHistorial(false);
+                  }
+                }}
+                className="p-6 bg-gray-50 border-b border-gray-100 flex flex-col gap-4"
+              >
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-gray-500 block mb-1">Fecha</label>
+                    <input
+                      type="date"
+                      value={newFecha}
+                      onChange={(e) => setNewFecha(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-center gap-4 pt-5">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newVacuna}
+                        onChange={(e) => setNewVacuna(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Vacuna</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newDesparasitacion}
+                        onChange={(e) => setNewDesparasitacion(e.target.checked)}
+                        className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                      />
+                      <span>Desparasitación</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-gray-500 block mb-1">Descripción / Tratamiento</label>
+                  <textarea
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    placeholder="Ej. Vacuna Quintuple aplicada. Próxima dosis en 1 año."
+                    rows={2}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmittingHistorial}
+                  className="self-end px-6 py-2.5 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition shadow-sm disabled:opacity-50"
+                >
+                  {isSubmittingHistorial ? 'Guardando...' : 'Guardar Registro'}
+                </button>
+              </form>
+            )}
+
+            <div className="p-6 md:p-8">
+              {historial.length > 0 ? (
+                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+                  {historial.map((reg, idx) => (
+                    <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-blue-50 text-blue-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl border border-gray-100 bg-white shadow-xl/2 transition hover:bg-[#f3f3f3f6]">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-gray-900 text-sm">{new Date(reg.fecha).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">{reg.descripcion}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {reg.vacuna && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700">
+                              <Syringe className="w-3 h-3" /> Vacuna <Check className="w-3 h-3" />
+                            </span>
+                          )}
+                          {reg.desparasitacion && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700">
+                              <Bug className="w-3 h-3" /> Desparasitación <Check className="w-3 h-3" />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <FileText className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <p className="text-gray-500 font-medium">Sin registros médicos</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </BlurFade>
 
       </main>
 

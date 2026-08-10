@@ -95,6 +95,29 @@ export default function AdoptPet() {
         throw new Error('No se pudo enviar la solicitud.');
       }
 
+      // Guardar también la cita programada en la tabla citas_visita
+      try {
+        await fetch('/api/citas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            idMascota: Number(id),
+            fecha: fecha || new Date().toISOString().split('T')[0],
+            hora: hora ? (hora.length === 5 ? hora + ":00" : hora) : "09:00:00",
+            telefono,
+            direccion,
+            tipoVivienda: vivienda,
+            tieneMascotas: otrasMascotas,
+            ocupacion,
+            ingresosAprox: ingresos,
+            mensaje: motivo
+          })
+        });
+      } catch (e) {
+        console.error("Error al registrar la cita de visita:", e);
+      }
+
       setSubmitted(true);
       window.scrollTo(0, 0);
     } catch (err: any) {

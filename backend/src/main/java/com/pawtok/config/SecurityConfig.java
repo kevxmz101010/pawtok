@@ -64,6 +64,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Estas rutas son PÚBLICAS (permitAll). Cualquiera puede entrar sin iniciar sesión.
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/mascotas", "/api/mascotas/**", "/uploads/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/mascotas/*/historial").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/adopciones/*/seguimiento").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/contacto").permitAll()
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout", "/dev/seed", "/api/testdb", "/api/testpet", "/api/fixpets").permitAll()
                 

@@ -4,6 +4,7 @@ import { Search, MapPin, Home, Heart, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { MascotaDTO } from '../types';
 import { useNavigate, useLocation } from 'react-router-dom';
+import PassportPetCard from './PassportPetCard';
 
 /**
  * Componente PetsSection (Sección de Mascotas)
@@ -306,61 +307,23 @@ export default function PetsSection() {
               const isAdmin = user?.rol === 'ADMIN';
 
               return (
-                <motion.article
+                <motion.div
                   layout
                   key={`${selectedType}-${pet.id}`}
-                  onClick={() => navigate(`/mascotas/${pet.id}`)}
-                  initial={{ opacity: 0, filter: 'blur(12px)', y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, filter: 'blur(0px)', y: 0, scale: 1 }}
-                  exit={{ opacity: 0, filter: 'blur(12px)', y: -20, scale: 0.95 }}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.95 }}
                   transition={{ duration: 0.4, ease: 'easeOut', layout: { duration: 0.4 } }}
-                  className="rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/20 overflow-hidden relative group hover:shadow-[0_8px_30px_rgba(11,132,255,0.12)] transition-all duration-300 h-[340px] flex flex-col justify-end cursor-pointer"
                 >
-                  {/* Image Background */}
-                  <div className="absolute inset-0 z-0">
-                    <img src={fotoUrl} alt={pet.nombre} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
-                    
-                    {/* Glassmorphism blur fade at the bottom */}
-                    <div 
-                      className="absolute inset-0 pointer-events-none"
-                      style={{
-                        backdropFilter: 'blur(32px)',
-                        WebkitBackdropFilter: 'blur(32px)',
-                        maskImage: 'linear-gradient(to top, black 0%, transparent 50%)',
-                        WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 50%)'
-                      }}
-                    />
-                    
-                    {/* Dark Gradient to ensure text readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
-                  </div>
-
-                  {pet.matchScore && (
-                    <div className="absolute top-4 left-4 z-30">
-                      <div className="px-3 py-1.5 bg-green-500/90 backdrop-blur-md border border-white/20 text-white text-sm font-bold rounded-full shadow-lg flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        {pet.matchScore}% Match
-                      </div>
-                    </div>
-                  )}
-
-
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(pet.id);
-                    }}
-                    className="absolute top-4 right-4 p-2 transition-all z-30 cursor-pointer drop-shadow-md hover:scale-110 active:scale-95"
-                  >
-                    <Heart className={`w-6 h-6 transition-colors ${isFav ? 'text-red-500 fill-red-500' : 'text-white hover:text-red-400'}`} />
-                  </button>
-
-                  {/* Text Information Overlay */}
-                  <div className="relative z-10 p-5 flex flex-col gap-1 text-left w-full transition-transform duration-300 pb-6">
-                    <h3 className="text-[22px] font-semibold text-white leading-tight truncate drop-shadow-md">{pet.nombre}</h3>
-                    <p className="text-[14px] text-gray-300 font-medium drop-shadow-sm">{pet.raza || pet.categoria}</p>
-                  </div>
-                </motion.article>
+                  <PassportPetCard
+                    pet={pet}
+                    fotoUrl={fotoUrl}
+                    fallbackImg={fallbackImg}
+                    isFav={isFav}
+                    onToggleFavorite={(_id, e) => toggleFavorite(pet.id)}
+                    onClick={() => navigate(`/mascotas/${pet.id}`)}
+                  />
+                </motion.div>
               );
             })}
           </AnimatePresence>

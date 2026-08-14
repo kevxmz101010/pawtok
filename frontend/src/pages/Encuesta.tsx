@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import { useState } from 'react';
 import Notification from '../components/Notification';
 import { ToastMessage } from '../types';
+import { RainbowButton } from '../components/ui/rainbow-button';
 
 const BlurInText = ({ text, highlight = '', delay = 30, startDelay = 0, className = '' }: { text: string, highlight?: string, delay?: number, startDelay?: number, className?: string }) => {
   const words = text.split(/\s+/);
@@ -298,15 +299,14 @@ export default function Encuesta() {
 
           <div className="text-center pt-8 pb-12">
             <FadeUp>
-              <button type="submit"
-                className="w-full md:w-auto bg-[#0B84FF] text-white text-xl font-bold px-12 py-4 rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:scale-105 transition transform duration-200 flex items-center justify-center gap-2 mx-auto">
-                <Search className="w-6 h-6" />
-                Ver Resultados
-              </button>
+              <RainbowButton 
+                type="submit"
+                className="w-auto text-sm md:text-base font-semibold px-6 py-2.5 h-auto flex items-center justify-center gap-2 mx-auto shadow-md"
+              >
+                <Search className="w-4 h-4" />
+                <span>Ver Resultados</span>
+              </RainbowButton>
             </FadeUp>
-            <p className="text-gray-400 text-sm mt-4">
-              <BlurInText text="Analizaremos cientos de perfiles en segundos." />
-            </p>
           </div>
 
         </form>

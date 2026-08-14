@@ -29,6 +29,22 @@ export default function RefugioDashboard() {
   }, [user]);
   const [foto, setFoto] = useState<File | null>(null);
 
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf') || !file.type.startsWith('image/')) {
+      showToast('No se permiten archivos PDF. Solo imágenes (JPG, PNG, WEBP).', 'error');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      showToast('La foto de perfil supera el límite de 3MB.', 'error');
+      e.target.value = '';
+      return;
+    }
+    setFoto(file);
+  };
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -393,7 +409,7 @@ export default function RefugioDashboard() {
               <div className="relative w-32 h-32 mb-5 group">
                 <img src={getProfileImage()} alt="Perfil" className="w-full h-full rounded-full object-cover border-4 border-white shadow-xl" />
                 <label className="absolute bottom-0 right-0 bg-[#ffffff4b] backdrop-blur-md hover:bg-white/50 p-2.5 rounded-full text-white shadow-xl border-2 border-white cursor-pointer transition-transform hover:scale-105 active:scale-95">
-                  <input type="file" accept="image/*" onChange={e => setFoto(e.target.files?.[0] || null)} className="hidden" />
+                  <input type="file" accept="image/*" onChange={handleFotoChange} className="hidden" />
                   <svg className="w-5 h-5 drop-shadow-md text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 </label>
               </div>

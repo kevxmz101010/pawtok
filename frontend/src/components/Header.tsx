@@ -137,7 +137,7 @@ export default function Header({
                   to={user.rol === 'REFUGIO' ? '/refugio' : user.rol === 'ADMIN' ? '/admin' : '/cuenta'} 
                   className="text-xs font-medium text-gray-700 hover:text-[#0B84FF] bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200/60 shadow-sm transition-colors cursor-pointer"
                 >
-                  Hola, {user.nombre}
+                  Hola, {user.rol === 'ADMIN' ? ((user.nombre && user.nombre.toLowerCase() !== 'admin' && user.nombre.toLowerCase() !== 'administrador') ? user.nombre : 'kj') : user.nombre}
                 </Link>
 
                 <button
@@ -156,7 +156,7 @@ export default function Header({
                 </Link>
                 <Link
                   to="/register"
-                  className="relative bg-[#0B84FF] text-white hover:bg-[#157def] active:scale-95 px-5 py-2 md:px-6 md:py-2.5 rounded-full text-xs md:text-sm font-medium transition-all cursor-pointer shadow-[inset_0px_2px_7px_#81c5ff,inset_0px_-3px_11px_#0048a8,0px_8px_15px_rgba(11,132,255,0.3)] hover:shadow-[inset_0px_2px_4px_#81c5ff,inset_0px_-3px_4px_#0053c2,0px_12px_20px_rgba(11,132,255,0.4)] inline-flex items-center justify-center"
+                  className="relative bg-[#0B84FF] text-white hover:bg-[#157def] active:scale-95 px-5 py-2 md:px-6 md:py-2.5 rounded-full text-xs md:text-sm font-medium transition-all cursor-pointer shadow-[inset_0px_2px_7px_#81c5ff,inset_0px_-3px_11px_#0048a8] hover:shadow-[inset_0px_2px_4px_#81c5ff,inset_0px_-3px_4px_#0053c2] inline-flex items-center justify-center"
                 >
                   <div className="absolute inset-x-0 h-[2px] w-1/2 mx-auto -top-px shadow-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
                   <span className="relative z-20">Registrarse</span>

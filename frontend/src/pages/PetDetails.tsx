@@ -182,48 +182,8 @@ export default function PetDetails() {
           </div>
         </BlurFade>
 
-        {/* ACTION BUTTON */}
-        <BlurFade delay={0.3} inView>
-            <div className="mt-10 flex justify-center">
-            <RainbowButton 
-                onClick={() => navigate(`/adoptar/${id}`)}
-                className="px-8 py-3.5 h-auto text-base font-bold shadow-lg"
-              >
-                Empezar Adopción
-            </RainbowButton>
-            </div>
-        </BlurFade>
-
-        {/* MAP & SHELTER BOX */}
-        <BlurFade delay={0.35} inView className="w-full mt-16 max-w-2xl mx-auto px-6">
-          <div className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
-            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Ubicación del Refugio</h3>
-                <p className="text-sm text-gray-500 mt-1">{pet.ubicacion || 'Bogotá, Colombia'}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-[#0B84FF]">
-                <MapPin className="w-6 h-6" />
-              </div>
-            </div>
-            <div className="h-72 relative bg-gray-100">
-              <iframe
-                src={`https://www.google.com/maps?q=${encodeURIComponent(pet.ubicacion || 'Bogotá, Colombia')}&output=embed`}
-                className="w-full h-full absolute inset-0"
-                style={{ border: 0 }}
-                allowFullScreen={false}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              ></iframe>
-            </div>
-          </div>
-        </BlurFade>
-
-        {/* SHADCN STYLE CAROUSEL - Show uploaded gallery or placeholders */}
-        {pet.galeria && pet.galeria.length > 0 && (
-          <BlurFade delay={0.4} inView className="w-full mt-4 mb-10 overflow-hidden flex flex-col items-center">
-            <div className="text-center mb-8">
-            </div>
+        {/* 1. GALERÍA DE FOTOS */}
+        <BlurFade delay={0.3} inView className="w-full mt-10 mb-10 overflow-hidden flex flex-col items-center">
           
           <div className="mx-auto max-w-md md:max-w-lg w-full relative px-6 md:px-12">
             <Carousel.Root 
@@ -243,7 +203,7 @@ export default function PetDetails() {
                     const imgUrl = (imgName.startsWith('http') ? imgName : `http://localhost:8080/uploads/${imgName}`);
                     return (
                       <Carousel.Item key={idx} className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl">
+                        <div className="overflow-hidden aspect-square rounded-3xl shadow-sm border border-gray-100">
                           <img alt={`Mascota ${idx}`} src={imgUrl} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
                         </div>
                       </Carousel.Item>
@@ -252,18 +212,18 @@ export default function PetDetails() {
                 ) : (
                   <>
                       <Carousel.Item className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl">
+                        <div className="overflow-hidden aspect-square rounded-3xl ">
                           <img alt="Mascota" src={fotoUrl} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
                         </div>
                       </Carousel.Item>
                       <Carousel.Item className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl">
-                          <img alt="Imagen 2" src="https://images.unsplash.com/photo-1544568100-847a948585b9?q=80&w=800" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
+                        <div className="overflow-hidden aspect-square rounded-3xl ">
+                          <img alt="Imagen 2" src={placeholders[1 % placeholders.length]} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
                         </div>
                       </Carousel.Item>
                       <Carousel.Item className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl">
-                          <img alt="Imagen 3" src="https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=800" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
+                        <div className="overflow-hidden aspect-square rounded-3xl ">
+                          <img alt="Imagen 3" src={placeholders[2 % placeholders.length]} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
                         </div>
                       </Carousel.Item>
                   </>
@@ -281,13 +241,11 @@ export default function PetDetails() {
             {/* Custom Slide Counter */}
             <SlideCounter />
           </div>
+        </BlurFade>
 
-          </BlurFade>
-        )}
-
-        {/* HISTORIAL MÉDICO */}
-        <BlurFade delay={0.45} inView className="w-full mt-4 mb-10 max-w-2xl mx-auto px-6">
-          <div className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
+        {/* 2. HISTORIAL MÉDICO */}
+        <BlurFade delay={0.35} inView className="w-full mt-1 mb-10 max-w-2xl mx-auto px-6">
+          <div className="bg-white rounded-[2.5rem] overflow-hidden flex flex-col">
             <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Historial Médico</h3>
@@ -439,6 +397,41 @@ export default function PetDetails() {
               )}
             </div>
           </div>
+        </BlurFade>
+
+        {/* 3. MAPA Y UBICACIÓN DEL REFUGIO */}
+        <BlurFade delay={0.4} inView className="w-full mt-4 mb-10 max-w-2xl mx-auto px-6">
+          <div className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
+            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Ubicación del Refugio</h3>
+                <p className="text-sm text-gray-500 mt-1">{pet.ubicacion || 'Bogotá, Colombia'}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-[#0B84FF]">
+                <MapPin className="w-6 h-6" />
+              </div>
+            </div>
+            <div className="h-72 relative bg-gray-100">
+              <iframe
+                src={`https://www.google.com/maps?q=${encodeURIComponent(pet.ubicacion || 'Bogotá, Colombia')}&output=embed`}
+                className="w-full h-full absolute inset-0"
+                style={{ border: 0 }}
+                allowFullScreen={false}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>
+          </div>
+        </BlurFade>
+
+        {/* 4. BOTÓN DE EMPEZAR ADOPCIÓN */}
+        <BlurFade delay={0.45} inView className="mt-8 mb-12 flex justify-center">
+          <RainbowButton 
+            onClick={() => navigate(`/adoptar/${id}`)}
+            className="px-10 py-4 h-auto text-lg font-bold shadow-xl hover:scale-105 transition-transform"
+          >
+            Empezar Adopción
+          </RainbowButton>
         </BlurFade>
 
       </main>

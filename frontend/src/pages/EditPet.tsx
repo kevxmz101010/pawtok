@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BlurFade } from '../components/ui/blur-fade';
-import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon } from 'lucide-react';
+import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle } from 'lucide-react';
 import Header from '../components/Header';
 import FullscreenToast from '../components/FullscreenToast';
 import Cropper from 'react-easy-crop';
@@ -22,6 +23,7 @@ export default function EditPet() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -102,30 +104,80 @@ export default function EditPet() {
     setTempImage(null);
   };
 
+  const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
+
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setTempImage(event.target?.result as string);
-        setIsCropping(true);
-      };
-      reader.readAsDataURL(e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validación: Rechazar PDF y archivos no imágenes
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf') || !file.type.startsWith('image/')) {
+      setError('Formato no permitido: No se aceptan archivos PDF ni documentos. Sube solo imágenes (JPG, PNG, WEBP).');
+      showToast('No se permiten archivos PDF. Solo imágenes.', 'error');
+      e.target.value = '';
+      return;
     }
+
+    // Validación: Rechazar archivos mayores a 3MB
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      setError(`El archivo "${file.name}" pesa ${sizeMB}MB y supera el límite máximo permitido de 3MB.`);
+      showToast('La imagen supera el límite máximo de 3MB.', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    setError('');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setTempImage(event.target?.result as string);
+      setIsCropping(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      Array.from(e.target.files).forEach((file) => {
-        if (!file.type.startsWith("image/")) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            setGalleryPreviews((prev) => [...prev, event.target!.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+    if (!e.target.files) return;
+
+    const files = Array.from(e.target.files);
+    let hasPdf = false;
+    let hasTooLarge = false;
+    let addedCount = 0;
+
+    files.forEach((file: File) => {
+      // Rechazo de PDF
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf') || !file.type.startsWith('image/')) {
+        hasPdf = true;
+        return;
+      }
+      // Rechazo > 3MB
+      if (file.size > MAX_FILE_SIZE) {
+        hasTooLarge = true;
+        return;
+      }
+
+      addedCount++;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setGalleryPreviews((prev) => [...prev, event.target!.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (hasPdf) {
+      setError('Formato no permitido: Se rechazaron archivos PDF. Solo se admiten imágenes (JPG, PNG, WEBP).');
+      showToast('Se rechazaron archivos PDF.', 'error');
+    } else if (hasTooLarge) {
+      setError('Una o más fotos superan el límite de 3MB y fueron rechazadas.');
+      showToast('Algunas fotos superan los 3MB.', 'error');
+    } else if (addedCount > 0) {
+      setError('');
     }
+
+    e.target.value = '';
   };
 
   const removeGalleryImage = (index: number) => {
@@ -142,27 +194,78 @@ export default function EditPet() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError('');
     const formData = new FormData(e.currentTarget);
     
+    const nombre = formData.get('nombre')?.toString().trim();
+    const raza = formData.get('raza')?.toString().trim();
+    const edad = formData.get('edad')?.toString().trim();
+    const ubicacion = formData.get('ubicacion')?.toString().trim();
+    const peso = formData.get('peso')?.toString().trim();
+    const descripcion = formData.get('descripcion')?.toString().trim();
+
     if (!coverPreview) {
-      showToast('Sube al menos la foto principal.', 'error');
+      setError('Debes subir al menos la foto principal de la portada.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!nombre) {
+      setError('Por favor, ingresa el nombre de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!raza) {
+      setError('Por favor, ingresa la raza de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!edad) {
+      setError('Por favor, ingresa la edad de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!ubicacion) {
+      setError('Por favor, ingresa la ubicación de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!peso) {
+      setError('Por favor, ingresa el peso de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (selectedPersonalities.length === 0) {
+      setError('Por favor, selecciona al menos una cualidad de personalidad.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!descripcion) {
+      setError('Por favor, escribe una historia o descripción de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
       return;
     }
 
     // Construct payload
     const payload = {
-      nombre: formData.get('nombre'),
+      nombre,
       tipo: tipo.toLowerCase(),
-      raza: formData.get('raza'),
-      edad: (formData.get('edad')?.toString().replace(/\D/g, '') || '12') + ' ' + unidadEdad.toLowerCase(),
-      ubicacion: formData.get('ubicacion'),
-      peso: formData.get('peso'),
+      raza,
+      edad: edad.replace(/\D/g, '') + ' ' + unidadEdad.toLowerCase(),
+      ubicacion,
+      peso,
       tamano: tamano,
       energia: energia,
       conNinos: conNinos,
       origen: origen.toLowerCase(),
       personalidad: selectedPersonalities.join(','),
-      descripcion: formData.get('descripcion'),
+      descripcion,
       imagenUrl: coverPreview,
       galeria: galleryPreviews,
       categoria: tipo.toUpperCase()
@@ -181,11 +284,11 @@ export default function EditPet() {
           navigate('/refugio');
         }, 1500);
       } else {
-        showToast('Ocurrió un error al actualizar la mascota.', 'error');
+        setError('Ocurrió un error al actualizar la mascota en el servidor.');
       }
     } catch (err) {
       console.error(err);
-      showToast('Error de conexión.', 'error');
+      setError('Error de conexión con el servidor.');
     }
   };
 
@@ -248,13 +351,29 @@ export default function EditPet() {
         </BlurFade>
 
         <BlurFade delay={0.2} inView className="mb-10">
-          <h1 className="text-1xl md:text-4xl font-semibold tracking-tight text-gray-900">Nueva publicación</h1>
-          <p className="text-gray-500 mt-1 max-w-96 text-base font-medium">Agrega una mascota con varias fotos y una ficha completa para que destaque.</p>
+          <h1 className="text-1xl md:text-4xl font-semibold tracking-tight text-gray-900">Editar Mascota</h1>
+          <p className="text-gray-500 mt-1 max-w-96 text-base font-medium">Actualiza la información, fotos y ficha completa de la mascota.</p>
         </BlurFade>
 
         <BlurFade delay={0.3} inView>
-          <form onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_60px_rgba(11,132,255,0.08)] border border-white p-8 md:p-10 space-y-12">
+          <form onSubmit={handleSubmit} noValidate className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_60px_rgba(11,132,255,0.08)] border border-white p-8 md:p-10 space-y-12">
             
+            <AnimatePresence mode="popLayout">
+              {error && (
+                <motion.div 
+                  layout
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.25 }}
+                  className="p-4 bg-red-50/90 border border-red-200 text-red-600 text-sm font-semibold rounded-2xl text-center shadow-sm flex items-center justify-center gap-2.5"
+                >
+                  <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+                  <span>{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* FOTO PRINCIPAL */}
             <section className="space-y-5">
               <div>
@@ -490,7 +609,23 @@ export default function EditPet() {
             </section>
 
             {/* SUBMIT BUTTON */}
-            <div className="pt-4 flex justify-center">
+            <div className="pt-4 flex flex-col items-center gap-4">
+              <AnimatePresence mode="popLayout">
+                {error && (
+                  <motion.div 
+                    layout
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.25 }}
+                    className="w-full max-w-md p-4 bg-red-50/90 border border-red-200 text-red-600 text-sm font-semibold rounded-2xl text-center shadow-sm flex items-center justify-center gap-2.5"
+                  >
+                    <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <RainbowButton 
                 type="submit"
                 className="w-fit px-12 py-6 rounded-[1.2rem] text-lg font-bold shadow-[0_10px_20px_rgba(11,132,255,0.3)]"

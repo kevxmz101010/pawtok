@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BlurFade } from '../components/ui/blur-fade';
-import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle, Plus, FileText, CheckCircle2, ShieldCheck, Trash2 } from 'lucide-react';
+import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle, Plus, FileText, CheckCircle2, ShieldCheck, Trash2, Syringe, Bug } from 'lucide-react';
 import Header from '../components/Header';
 import FullscreenToast from '../components/FullscreenToast';
 import Cropper from 'react-easy-crop';
@@ -10,6 +10,7 @@ import getCroppedImg from '../utils/cropImage';
 import { RainbowButton } from '../components/ui/rainbow-button';
 import { HeadlessListbox } from '../components/ui/headless-listbox';
 import { DatePicker } from '../components/ui/date-picker';
+import { AnimatedCheckbox } from '../components/ui/animated-checkbox';
 import { useAuth } from '../context/AuthContext';
 
 const PERSONALITY_OPTIONS = [
@@ -618,25 +619,21 @@ export default function AddPet() {
                       placeholder="Seleccionar fecha"
                     />
                   </div>
-                  <div className="sm:w-2/3 flex items-center gap-6 pt-2 sm:pt-6">
-                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={newMedVacuna} 
-                        onChange={(e) => setNewMedVacuna(e.target.checked)}
-                        className="w-4 h-4 rounded text-[#0B84FF] focus:ring-[#0B84FF]"
-                      />
-                      <span>¿Es Vacuna?</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={newMedDesparasitacion} 
-                        onChange={(e) => setNewMedDesparasitacion(e.target.checked)}
-                        className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
-                      />
-                      <span>¿Es Desparasitación?</span>
-                    </label>
+                  <div className="sm:w-2/3 flex flex-wrap items-center gap-3 pt-2 sm:pt-6">
+                    <AnimatedCheckbox 
+                      checked={newMedVacuna} 
+                      onChange={setNewMedVacuna} 
+                      label="¿Es Vacuna?"
+                      icon={<Syringe className="w-4 h-4" />}
+                      activeColor="blue"
+                    />
+                    <AnimatedCheckbox 
+                      checked={newMedDesparasitacion} 
+                      onChange={setNewMedDesparasitacion} 
+                      label="¿Es Desparasitación?"
+                      icon={<Bug className="w-4 h-4" />}
+                      activeColor="purple"
+                    />
                   </div>
                 </div>
 

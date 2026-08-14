@@ -7,6 +7,7 @@ import { RainbowButton } from '../components/ui/rainbow-button';
 import { BlurFade } from '../components/ui/blur-fade';
 import { Carousel, CarouselIndicator } from '../components/ui/simple-carousel';
 import { DatePicker } from '../components/ui/date-picker';
+import { AnimatedCheckbox } from '../components/ui/animated-checkbox';
 import Autoplay from 'embla-carousel-autoplay';
 import { useAuth } from '../context/AuthContext';
 
@@ -313,25 +314,21 @@ export default function PetDetails() {
                       placeholder="Seleccionar fecha"
                     />
                   </div>
-                  <div className="flex items-center gap-4 pt-5">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newVacuna}
-                        onChange={(e) => setNewVacuna(e.target.checked)}
-                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>Vacuna</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newDesparasitacion}
-                        onChange={(e) => setNewDesparasitacion(e.target.checked)}
-                        className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
-                      />
-                      <span>Desparasitación</span>
-                    </label>
+                  <div className="flex flex-wrap items-center gap-3 pt-5">
+                    <AnimatedCheckbox 
+                      checked={newVacuna} 
+                      onChange={setNewVacuna} 
+                      label="Vacuna"
+                      icon={<Syringe className="w-4 h-4" />}
+                      activeColor="blue"
+                    />
+                    <AnimatedCheckbox 
+                      checked={newDesparasitacion} 
+                      onChange={setNewDesparasitacion} 
+                      label="Desparasitación"
+                      icon={<Bug className="w-4 h-4" />}
+                      activeColor="purple"
+                    />
                   </div>
                 </div>
 

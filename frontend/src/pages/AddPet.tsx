@@ -675,35 +675,60 @@ export default function AddPet() {
 
               {/* LISTA DE REGISTROS AÑADIDOS */}
               {medicalRecords.length > 0 ? (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <span className="text-xs font-semibold text-gray-500 block">
                     Registros que se publicarán ({medicalRecords.length})
                   </span>
-                  {medicalRecords.map((rec, index) => (
-                    <div key={index} className="p-4 rounded-2xl bg-white border border-gray-200 flex items-center justify-between gap-4 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0B84FF] flex items-center justify-center shrink-0">
-                          <FileText className="w-4 h-4" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {medicalRecords.map((rec, index) => (
+                      <motion.div 
+                        key={index} 
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.92 }}
+                        className="p-4 rounded-2xl bg-white border border-gray-200/80 hover:border-[#0B84FF]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-3 relative group"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0B84FF] flex items-center justify-center shrink-0">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveMedicalRecord(index)}
+                            className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition shrink-0 cursor-pointer"
+                            title="Eliminar de la lista"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
+
                         <div>
-                          <p className="text-sm font-bold text-gray-900">{rec.descripcion}</p>
-                          <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 font-medium">
-                            <span>{rec.fecha}</span>
-                            {rec.vacuna && <span className="px-2 py-0.5 bg-blue-50 text-[#0B84FF] font-bold rounded-md text-[10px]">Vacuna</span>}
-                            {rec.desparasitacion && <span className="px-2 py-0.5 bg-purple-50 text-purple-700 font-bold rounded-md text-[10px]">Desparasitación</span>}
+                          <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug">
+                            {rec.descripcion}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-gray-100/80 flex items-center justify-between gap-1">
+                          <span className="text-[11px] font-semibold text-gray-400">
+                            {rec.fecha}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            {rec.vacuna && (
+                              <span className="px-2 py-0.5 bg-blue-50 text-[#0B84FF] font-bold rounded-md text-[10px]">
+                                Vacuna
+                              </span>
+                            )}
+                            {rec.desparasitacion && (
+                              <span className="px-2 py-0.5 bg-purple-50 text-purple-700 font-bold rounded-md text-[10px]">
+                                Desparasitación
+                              </span>
+                            )}
                           </div>
                         </div>
-                      </div>
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveMedicalRecord(index)}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition"
-                        title="Eliminar de la lista"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="p-4 rounded-2xl bg-gray-50/70 border border-dashed border-gray-200 text-center text-xs text-gray-400 font-medium">

@@ -260,13 +260,13 @@ export default function PetDetails() {
                     whileHover="hover"
                     whileTap={{ scale: 0.94 }}
                     onClick={() => setShowAddForm(!showAddForm)}
-                    className="px-4 py-2 bg-blue-50 text-[#0B84FF] font-bold rounded-xl hover:bg-blue-100 transition-all text-sm flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    className="px-4 py-2 bg-[#abd5ff] hover:bg-[#97cbff] text-blue-900 font-bold rounded-full shadow-inner shadow-white/80 transition-colors text-sm flex items-center gap-1.5 cursor-pointer"
                   >
                     <motion.span
                       variants={{
-                        hover: { rotate: 360, scale: 1.2 }
+                        hover: { rotate: 180, scale: 1.15 }
                       }}
-                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                      transition={{ type: "spring", stiffness: 260, damping: 18 }}
                       className="inline-flex items-center justify-center"
                     >
                       {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4 stroke-[2.5]" />}

@@ -689,13 +689,13 @@ export default function EditPet() {
                     whileHover="hover"
                     whileTap={{ scale: 0.94 }}
                     onClick={() => setShowAddMedForm(!showAddMedForm)}
-                    className="px-3.5 py-1.5 bg-[#0B84FF] hover:bg-[#0071e3] text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    className="px-3.5 py-1.5 bg-[#abd5ff] hover:bg-[#97cbff] text-blue-900 text-xs font-bold rounded-full shadow-inner shadow-white/80 transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <motion.span
                       variants={{
-                        hover: { rotate: 360, scale: 1.2 }
+                        hover: { rotate: 180, scale: 1.15 }
                       }}
-                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                      transition={{ type: "spring", stiffness: 260, damping: 18 }}
                       className="inline-flex items-center justify-center"
                     >
                       {showAddMedForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
@@ -766,13 +766,13 @@ export default function EditPet() {
                         whileTap={{ scale: 0.94 }}
                         disabled={isSubmittingMed}
                         onClick={handleSaveNewMedRecord}
-                        className="px-5 py-2.5 bg-[#0B84FF] hover:bg-[#0071e3] disabled:opacity-50 text-white text-sm font-bold rounded-2xl transition-all shadow-sm hover:shadow-[0_6px_20px_rgba(11,132,255,0.3)] flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                        className="px-5 py-2.5 bg-[#abd5ff] hover:bg-[#97cbff] disabled:opacity-50 text-blue-900 text-sm font-bold rounded-full shadow-inner shadow-white/80 transition-colors flex items-center justify-center gap-2 shrink-0 cursor-pointer"
                       >
                         <motion.span
                           variants={{
-                            hover: { rotate: 360, scale: 1.25 }
+                            hover: { rotate: 180, scale: 1.15 }
                           }}
-                          transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                          transition={{ type: "spring", stiffness: 260, damping: 18 }}
                           className="inline-flex items-center justify-center"
                         >
                           <Plus className="w-4 h-4 stroke-[2.5]" />

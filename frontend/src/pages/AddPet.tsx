@@ -656,13 +656,13 @@ export default function AddPet() {
                       whileHover="hover"
                       whileTap={{ scale: 0.94 }}
                       onClick={handleAddMedicalRecord}
-                      className="px-5 py-2.5 bg-[#0B84FF] hover:bg-[#0071e3] text-white text-sm font-bold rounded-2xl shadow-sm hover:shadow-[0_6px_20px_rgba(11,132,255,0.3)] transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer group"
+                      className="px-5 py-2.5 bg-[#abd5ff] hover:bg-[#97cbff] text-blue-900 text-sm font-bold rounded-full shadow-inner shadow-white/80 transition-colors flex items-center justify-center gap-2 shrink-0 cursor-pointer"
                     >
                       <motion.span
                         variants={{
-                          hover: { rotate: 360, scale: 1.25 }
+                          hover: { rotate: 180, scale: 1.15 }
                         }}
-                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                        transition={{ type: "spring", stiffness: 260, damping: 18 }}
                         className="inline-flex items-center justify-center"
                       >
                         <Plus className="w-4 h-4 stroke-[2.5]" />

@@ -108,7 +108,27 @@ export default function PetDetails() {
   const placeholders = isCat ? catPlaceholders : dogPlaceholders;
   const fallbackImg = placeholders[pet.id % placeholders.length];
 
-  const fotoUrl = (pet.imagenUrl && pet.imagenUrl.trim() !== '') ? (pet.imagenUrl.startsWith('http') ? pet.imagenUrl : `http://localhost:8080/uploads/${pet.imagenUrl}`) : fallbackImg;
+  // Colección estricta de fotos reales subidas para esta mascota
+  const allImages: string[] = [];
+  if (pet.imagenUrl && pet.imagenUrl.trim() !== '') {
+    const mainImg = pet.imagenUrl.startsWith('http') ? pet.imagenUrl : `http://localhost:8080/uploads/${pet.imagenUrl}`;
+    allImages.push(mainImg);
+  }
+  if (pet.galeria && Array.isArray(pet.galeria)) {
+    pet.galeria.forEach((img) => {
+      if (img && img.trim() !== '') {
+        const gUrl = img.startsWith('http') ? img : `http://localhost:8080/uploads/${img}`;
+        if (!allImages.includes(gUrl)) {
+          allImages.push(gUrl);
+        }
+      }
+    });
+  }
+  if (allImages.length === 0) {
+    allImages.push(fallbackImg);
+  }
+
+  const fotoUrl = allImages[0];
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 overflow-hidden relative">
@@ -127,7 +147,7 @@ export default function PetDetails() {
         
         {/* APP ICON (Pet Profile) */}
         <BlurFade delay={0.1} inView>
-          <div className="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-[32px] overflow-hidden shadow-[0_12px_24px_rgba(0,0,0,0.12)] border border-gray-100">
+          <div className="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-[32px] overflow-hidden shadow-[0_12px_24px_rgba(0,0,0,0.12)] border border-gray-100 bg-white">
             <img src={fotoUrl} alt={pet.nombre} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
           </div>
           <p className="text-center mt-3 text-sm font-semibold text-gray-500">{(pet as any).refugioNombre || `Refugio #${pet.idRefugio || 'Pawtok'}`}</p>
@@ -185,64 +205,59 @@ export default function PetDetails() {
           </div>
         </BlurFade>
 
-        {/* 1. GALERÍA DE FOTOS */}
+        {/* 1. GALERÍA DE FOTOS (Exactamente las fotos subidas con 100% de opacidad y nitidez) */}
         <BlurFade delay={0.3} inView className="w-full mt-10 mb-10 overflow-hidden flex flex-col items-center">
-          
           <div className="mx-auto max-w-md md:max-w-lg w-full relative px-6 md:px-12">
-            <Carousel.Root 
-              opts={{ loop: false, align: 'center' }} 
-              setApi={(api) => {
-              if (!api) return;
-              api.on("select", () => {
-                window.dispatchEvent(new CustomEvent('carousel-select', { detail: api.selectedScrollSnap() + 1 }));
-              });
-              setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('carousel-init', { detail: api.scrollSnapList().length }));
-              }, 100);
-            }} className="w-full">
-              <Carousel.Content>
-                {pet.galeria && pet.galeria.length > 0 ? (
-                  pet.galeria.map((imgName, idx) => {
-                    const imgUrl = (imgName.startsWith('http') ? imgName : `http://localhost:8080/uploads/${imgName}`);
-                    return (
-                      <Carousel.Item key={idx} className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl shadow-sm border border-gray-100">
-                          <img alt={`Mascota ${idx}`} src={imgUrl} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
-                        </div>
-                      </Carousel.Item>
-                    );
-                  })
-                ) : (
-                  <>
-                      <Carousel.Item className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl ">
-                          <img alt="Mascota" src={fotoUrl} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
-                        </div>
-                      </Carousel.Item>
-                      <Carousel.Item className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl ">
-                          <img alt="Imagen 2" src={placeholders[1 % placeholders.length]} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-                        </div>
-                      </Carousel.Item>
-                      <Carousel.Item className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl ">
-                          <img alt="Imagen 3" src={placeholders[2 % placeholders.length]} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-                        </div>
-                      </Carousel.Item>
-                  </>
-                )}
-              </Carousel.Content>
+            {allImages.length === 1 ? (
+              // Una sola foto: Vista nítida directa y sin duplicados ficticios
+              <div className="overflow-hidden aspect-square rounded-3xl shadow-lg border border-gray-100/90 bg-white">
+                <img 
+                  alt={pet.nombre} 
+                  src={allImages[0]} 
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+                  onError={(e) => { e.currentTarget.src = fallbackImg; }} 
+                />
+              </div>
+            ) : (
+              // Múltiples fotos: Carrusel interactivo
+              <Carousel.Root 
+                opts={{ loop: false, align: 'center' }} 
+                setApi={(api) => {
+                  if (!api) return;
+                  api.on("select", () => {
+                    window.dispatchEvent(new CustomEvent('carousel-select', { detail: api.selectedScrollSnap() + 1 }));
+                  });
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('carousel-init', { detail: api.scrollSnapList().length }));
+                  }, 100);
+                }} 
+                className="w-full"
+              >
+                <Carousel.Content>
+                  {allImages.map((imgUrl, idx) => (
+                    <Carousel.Item key={idx} className="basis-full">
+                      <div className="overflow-hidden aspect-square rounded-3xl shadow-lg border border-gray-100/90 bg-white">
+                        <img 
+                          alt={`${pet.nombre} ${idx + 1}`} 
+                          src={imgUrl} 
+                          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
+                          onError={(e) => { e.currentTarget.src = fallbackImg; }} 
+                        />
+                      </div>
+                    </Carousel.Item>
+                  ))}
+                </Carousel.Content>
 
-              <Carousel.PrevTrigger className="absolute top-1/2 -left-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50">
+                <Carousel.PrevTrigger className="absolute top-1/2 -left-4 sm:-left-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-md hover:bg-gray-50 transition-colors disabled:opacity-30">
                   <ChevronLeft className="w-5 h-5" />
-              </Carousel.PrevTrigger>
-              <Carousel.NextTrigger className="absolute top-1/2 -right-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50">
+                </Carousel.PrevTrigger>
+                <Carousel.NextTrigger className="absolute top-1/2 -right-4 sm:-right-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-md hover:bg-gray-50 transition-colors disabled:opacity-30">
                   <ChevronRight className="w-5 h-5" />
-              </Carousel.NextTrigger>
-            </Carousel.Root>
-            
-            {/* Custom Slide Counter */}
-            <SlideCounter />
+                </Carousel.NextTrigger>
+
+                <SlideCounter totalCount={allImages.length} />
+              </Carousel.Root>
+            )}
           </div>
         </BlurFade>
 
@@ -443,13 +458,14 @@ export default function PetDetails() {
   );
 }
 
-function SlideCounter() {
+function SlideCounter({ totalCount = 1 }: { totalCount?: number }) {
   const [current, setCurrent] = useState(1);
-  const [count, setCount] = useState(3);
+  const [count, setCount] = useState(totalCount);
 
   useEffect(() => {
+    setCount(totalCount);
     const onSelect = (e: any) => setCurrent(e.detail);
-    const onInit = (e: any) => setCount(e.detail);
+    const onInit = (e: any) => setCount(e.detail || totalCount);
     
     window.addEventListener('carousel-select', onSelect);
     window.addEventListener('carousel-init', onInit);
@@ -458,11 +474,13 @@ function SlideCounter() {
       window.removeEventListener('carousel-select', onSelect);
       window.removeEventListener('carousel-init', onInit);
     };
-  }, []);
+  }, [totalCount]);
+
+  if (count <= 1) return null;
 
   return (
-    <div className="py-4 text-center text-sm text-gray-500 font-medium">
-      Slide {current} of {count}
+    <div className="py-3 text-center text-xs font-bold text-gray-400 select-none">
+      Foto {current} de {count}
     </div>
   );
 }

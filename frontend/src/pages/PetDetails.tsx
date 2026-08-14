@@ -6,6 +6,7 @@ import { ToastMessage, MascotaDTO } from '../types';
 import { RainbowButton } from '../components/ui/rainbow-button';
 import { BlurFade } from '../components/ui/blur-fade';
 import { Carousel, CarouselIndicator } from '../components/ui/simple-carousel';
+import { DatePicker } from '../components/ui/date-picker';
 import Autoplay from 'embla-carousel-autoplay';
 import { useAuth } from '../context/AuthContext';
 
@@ -306,12 +307,10 @@ export default function PetDetails() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
                     <label className="text-xs font-bold text-gray-500 block mb-1">Fecha</label>
-                    <input
-                      type="date"
+                    <DatePicker
                       value={newFecha}
-                      onChange={(e) => setNewFecha(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      required
+                      onChange={setNewFecha}
+                      placeholder="Seleccionar fecha"
                     />
                   </div>
                   <div className="flex items-center gap-4 pt-5">

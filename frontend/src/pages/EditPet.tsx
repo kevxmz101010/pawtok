@@ -9,6 +9,7 @@ import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
 import { RainbowButton } from '../components/ui/rainbow-button';
 import { HeadlessListbox } from '../components/ui/headless-listbox';
+import { DatePicker } from '../components/ui/date-picker';
 import { useAuth } from '../context/AuthContext';
 
 const PERSONALITY_OPTIONS = [
@@ -716,11 +717,10 @@ export default function EditPet() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="sm:w-1/3">
                       <label className="block text-xs font-bold text-gray-600 mb-1.5">Fecha</label>
-                      <input 
-                        type="date" 
+                      <DatePicker 
                         value={newMedFecha} 
-                        onChange={(e) => setNewMedFecha(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:border-[#0B84FF] outline-none"
+                        onChange={setNewMedFecha}
+                        placeholder="Seleccionar fecha"
                       />
                     </div>
                     <div className="sm:w-2/3 flex items-center gap-6 pt-2 sm:pt-6">

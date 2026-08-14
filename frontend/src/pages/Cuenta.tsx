@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import FullscreenToast from '../components/FullscreenToast';
 import { BlurFade } from '../components/ui/blur-fade';
+import { DatePicker } from '../components/ui/date-picker';
 
 interface SolicitudDTO {
   adopcionId: number;
@@ -532,8 +533,8 @@ export default function Cuenta() {
 
                                     <form onSubmit={(e) => handleAddSeguimiento(e, sol.adopcionId)} className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
                                       <h6 className="text-xs font-bold text-[#0B84FF] mb-2">Añadir Nuevo Registro</h6>
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
-                                        <input type="date" value={newSegFecha} onChange={e => setNewSegFecha(e.target.value)} required className="text-xs px-2 py-1.5 rounded-md border border-gray-200 outline-none focus:border-[#0B84FF]" />
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 items-center">
+                                        <DatePicker value={newSegFecha} onChange={setNewSegFecha} placeholder="Fecha del seguimiento" />
                                         <input type="file" accept="image/*" onChange={e => setNewSegFoto(e.target.files?.[0] || null)} className="text-xs" />
                                       </div>
                                       <textarea value={newSegComentario} onChange={e => setNewSegComentario(e.target.value)} required placeholder="Comentario..." rows={2} className="w-full text-xs px-2 py-1.5 rounded-md border border-gray-200 outline-none focus:border-[#0B84FF] mb-2 resize-none" />

@@ -4,6 +4,7 @@ import { ChevronLeft, CheckCircle2, Calendar, Clock, Home as HomeIcon, Briefcase
 import { MascotaDTO } from '../types';
 import { BlurFade } from '../components/ui/blur-fade';
 import { RainbowButton } from '../components/ui/rainbow-button';
+import { DatePicker } from '../components/ui/date-picker';
 import { useAuth } from '../context/AuthContext';
 
 /**
@@ -195,8 +196,12 @@ export default function AdoptPet() {
                         <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
                           <Calendar className="w-4 h-4 text-gray-400" /> Fecha deseada
                         </label>
-                        <input type="date" required min={minDate} value={fecha} onChange={e => setFecha(e.target.value)}
-                               className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
+                        <DatePicker 
+                          value={fecha} 
+                          onChange={setFecha}
+                          minDate={minDate}
+                          placeholder="Seleccionar fecha"
+                        />
                       </div>
                       <div>
                         <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">

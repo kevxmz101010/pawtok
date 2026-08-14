@@ -9,6 +9,7 @@ import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
 import { RainbowButton } from '../components/ui/rainbow-button';
 import { HeadlessListbox } from '../components/ui/headless-listbox';
+import { DatePicker } from '../components/ui/date-picker';
 import { useAuth } from '../context/AuthContext';
 
 const PERSONALITY_OPTIONS = [
@@ -601,7 +602,7 @@ export default function AddPet() {
                     Registra vacunas, desparasitaciones o diagnósticos médicos para que aparezcan en el perfil público de la mascota.
                   </p>
                 </div>
-                <span className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm">
+                <span className="px- py-1  text-green-700 text-xs font-bold rounded-xl flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-green-600" /> Registro Clínico Oficial
                 </span>
               </div>
@@ -611,11 +612,10 @@ export default function AddPet() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="sm:w-1/3">
                     <label className="block text-xs font-bold text-gray-600 mb-1.5">Fecha</label>
-                    <input 
-                      type="date" 
+                    <DatePicker 
                       value={newMedFecha} 
-                      onChange={(e) => setNewMedFecha(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:border-[#0B84FF] outline-none"
+                      onChange={setNewMedFecha}
+                      placeholder="Seleccionar fecha"
                     />
                   </div>
                   <div className="sm:w-2/3 flex items-center gap-6 pt-2 sm:pt-6">
@@ -659,7 +659,7 @@ export default function AddPet() {
                     <button 
                       type="button" 
                       onClick={handleAddMedicalRecord}
-                      className="px-5 py-2.5 bg-[#0B84FF] hover:bg-[#0071e3] text-white text-sm font-bold rounded-xl transition shadow-sm flex items-center justify-center gap-1.5 shrink-0"
+                      className="px-5 py-2.5 bg-[#abd5ff] hover:bg-[#6bb5ff] text-blue-900 text-sm font-bold rounded-4xl shadow-inner shadow-white/80 transition flex items-center justify-center gap-1.5 shrink-0"
                     >
                       <Plus className="w-4 h-4" /> Agregar Registro
                     </button>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, Sparkles } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface DatePickerProps {
   value: string; // YYYY-MM-DD
@@ -256,7 +256,7 @@ export function DatePicker({
                     type="button"
                     key={`curr-${d}`}
                     onClick={() => handleSelectDay(d, 0)}
-                    className={`h-7 w-7 mx-auto rounded-lg flex items-center justify-center text-[11px] font-bold transition-all relative ${
+                    className={`h-7 w-7 mx-auto rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${
                       active
                         ? 'bg-[#0B84FF] text-white shadow-[0_2px_8px_rgba(11,132,255,0.4)] scale-105 z-10'
                         : current
@@ -265,9 +265,6 @@ export function DatePicker({
                     }`}
                   >
                     {d}
-                    {current && !active && (
-                      <span className="absolute bottom-0.5 w-1 h-1 bg-[#0B84FF] rounded-full"></span>
-                    )}
                   </button>
                 );
               })}
@@ -290,9 +287,9 @@ export function DatePicker({
               <button
                 type="button"
                 onClick={handleSelectToday}
-                className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-[#0B84FF] text-[11px] font-bold rounded-lg transition flex items-center gap-1"
+                className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-[#0B84FF] text-[11px] font-bold rounded-lg transition"
               >
-                <Sparkles className="w-2.5 h-2.5" /> Hoy
+                Hoy
               </button>
 
               <button

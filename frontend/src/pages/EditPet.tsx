@@ -721,7 +721,7 @@ export default function EditPet() {
               {/* FORMULARIO PARA AGREGAR NUEVO REGISTRO CLÍNICO */}
               {showAddMedForm && (
                 <div className="p-6 bg-blue-50/40 border border-blue-100 rounded-3xl space-y-4">
-                  <span className="text-xs font-bold text-gray-700 block uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-gray-700 block">
                     Nuevo Registro Médico / Vacuna
                   </span>
                   

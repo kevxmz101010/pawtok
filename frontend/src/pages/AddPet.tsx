@@ -676,7 +676,7 @@ export default function AddPet() {
               {/* LISTA DE REGISTROS AÑADIDOS */}
               {medicalRecords.length > 0 ? (
                 <div className="space-y-2.5">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
+                  <span className="text-xs font-semibold text-gray-500 block">
                     Registros que se publicarán ({medicalRecords.length})
                   </span>
                   {medicalRecords.map((rec, index) => (

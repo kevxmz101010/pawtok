@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BlurFade } from '../components/ui/blur-fade';
-import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle, Lock, ShieldCheck, FileText } from 'lucide-react';
 import Header from '../components/Header';
 import FullscreenToast from '../components/FullscreenToast';
 import Cropper from 'react-easy-crop';
@@ -24,6 +24,7 @@ export default function EditPet() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [error, setError] = useState('');
+  const [historial, setHistorial] = useState<any[]>([]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -36,6 +37,15 @@ export default function EditPet() {
   const [selectedPersonalities, setSelectedPersonalities] = useState<string[]>([]);
   const [toastMsg, setToastMsg] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [petData, setPetData] = useState<any>(null);
+
+  useEffect(() => {
+    if (id) {
+      fetch(`/api/mascotas/${id}/historial`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setHistorial(data))
+        .catch(() => setHistorial([]));
+    }
+  }, [id]);
 
   useEffect(() => {
     if (id) {
@@ -606,6 +616,71 @@ export default function EditPet() {
                 placeholder="Escribe aquí su historia..."
                 className="w-full px-5 py-4 rounded-[1.5rem] bg-gray-50/80 border border-gray-200 focus:bg-white focus:border-[#0B84FF] outline-none transition-all resize-none font-medium text-gray-700 leading-relaxed"
               ></textarea>
+            </section>
+
+            {/* HISTORIAL MÉDICO VALIDADO Y PROTEGIDO (RF 1.4, RN 1.4 / CP-GM-07) */}
+            <section className="space-y-5 pt-6 border-t border-gray-100">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="text-xl font-bold text-gray-900">Historial Médico Validado</h2>
+                    <span className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-sm">
+                      <Lock className="w-3.5 h-3.5 text-amber-600" /> Modo Solo Lectura
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 font-medium mt-1">Vacunas, diagnósticos y tratamientos certificados por administración.</p>
+                </div>
+                <span className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-extrabold rounded-xl flex items-center gap-1.5 shadow-sm">
+                  <ShieldCheck className="w-4 h-4 text-green-600" /> Datos Médicos Verificados
+                </span>
+              </div>
+
+              {/* AVISO DE PROTECCIÓN DE DATOS MÉDICOS */}
+              <div className="p-5 bg-amber-50/70 border border-amber-200/90 rounded-2xl flex items-start gap-3.5 shadow-sm">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5 shadow-inner">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <div className="text-xs text-amber-950 leading-relaxed">
+                  <strong className="font-bold block text-sm mb-1 text-amber-900 flex items-center gap-1.5">
+                    Aviso de Protección de Datos Médicos (RF 1.4 / RN 1.4):
+                  </strong>
+                  La sección de historial médico aprobado se encuentra bloqueada en modo solo lectura para salvaguardar la veracidad clínica del animal. El sistema no permite alteraciones, modificaciones ni eliminación de diagnósticos o vacunas aprobadas.
+                </div>
+              </div>
+
+              {/* REGISTROS MÉDICOS PROTEGIDOS */}
+              <div className="space-y-3">
+                {historial.length > 0 ? (
+                  historial.map((reg: any, idx: number) => (
+                    <div key={reg.id || idx} className="p-4 rounded-2xl bg-gray-50/80 border border-gray-200 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0B84FF] flex items-center justify-center shrink-0 border border-blue-100">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{reg.descripcion}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 font-medium">
+                            <span>{reg.fecha ? new Date(reg.fecha).toLocaleDateString() : 'Certificado'}</span>
+                            {reg.vacuna && <span className="px-2 py-0.5 bg-blue-50 text-[#0B84FF] font-bold rounded-md text-[10px] border border-blue-100">Vacuna Validada</span>}
+                            {reg.desparasitacion && <span className="px-2 py-0.5 bg-green-50 text-green-700 font-bold rounded-md text-[10px] border border-green-100">Desparasitación</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      <span className="px-3 py-1 bg-gray-200/70 text-gray-600 text-xs font-bold rounded-xl flex items-center gap-1 cursor-not-allowed select-none shadow-sm">
+                        <Lock className="w-3 h-3" /> Bloqueado
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-5 rounded-2xl bg-gray-50/60 border border-dashed border-gray-200 text-center">
+                    <p className="text-xs text-gray-600 font-semibold">Vacunación y ficha clínica certificada por el veterinario administrador.</p>
+                    <span className="inline-flex items-center gap-1 text-[11px] text-gray-400 font-medium mt-1">
+                      <Lock className="w-3 h-3" /> Registros protegidos contra modificaciones por política de seguridad clínica.
+                    </span>
+                  </div>
+                )}
+              </div>
             </section>
 
             {/* SUBMIT BUTTON */}

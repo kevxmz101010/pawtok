@@ -9,6 +9,7 @@ import { BlurFade } from '../components/ui/blur-fade';
 import { Carousel, CarouselIndicator } from '../components/ui/simple-carousel';
 import { DatePicker } from '../components/ui/date-picker';
 import { AnimatedCheckbox } from '../components/ui/animated-checkbox';
+import { TiltCard } from '../components/ui/tilt-card';
 import Autoplay from 'embla-carousel-autoplay';
 import { useAuth } from '../context/AuthContext';
 
@@ -206,22 +207,25 @@ export default function PetDetails() {
           </div>
         </BlurFade>
 
-        {/* 1. GALERÍA DE FOTOS (Efecto 3D con sombra profunda e inner shadow superior) */}
-        <BlurFade delay={0.3} inView className="w-full mt-10 mb-10 overflow-hidden flex flex-col items-center">
-          <div className="mx-auto max-w-md md:max-w-lg w-full relative px-6 md:px-12">
+        {/* 1. GALERÍA DE FOTOS (Efecto 3D con Tilt al pasar el mouse, sombra profunda e inner shadow superior) */}
+        <BlurFade delay={0.3} inView className="w-full mt-8 mb-8 overflow-visible flex flex-col items-center">
+          <div className="mx-auto max-w-md md:max-w-lg w-full relative px-4 sm:px-10 overflow-visible py-4">
             {allImages.length === 1 ? (
-              // Una sola foto: Efecto 3D nítido y con inner shadow
-              <div className="relative overflow-hidden aspect-square rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.14),0_8px_16px_rgba(0,0,0,0.06)] border border-gray-100 bg-white group">
-                <img 
-                  alt={pet.nombre} 
-                  src={allImages[0]} 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                  onError={(e) => { e.currentTarget.src = fallbackImg; }} 
-                />
-                <div className="pointer-events-none absolute inset-0 rounded-[36px] shadow-[inset_0_3px_6px_rgba(255,255,255,0.9),inset_0_-4px_12px_rgba(0,0,0,0.08)] ring-1 ring-inset ring-black/5" />
-              </div>
+              // Una sola foto con Tilt 3D interactivo y sombra completa visible
+              <TiltCard maxTilt={14} scale={1.03}>
+                <div className="relative overflow-hidden aspect-square rounded-[36px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25),0_10px_25px_-5px_rgba(0,0,0,0.12)] border border-gray-100 bg-white">
+                  <img 
+                    alt={pet.nombre} 
+                    src={allImages[0]} 
+                    className="w-full h-full object-cover select-none pointer-events-none" 
+                    onError={(e) => { e.currentTarget.src = fallbackImg; }} 
+                  />
+                  {/* Glossy inner top highlight + bottom depth shadow */}
+                  <div className="pointer-events-none absolute inset-0 rounded-[36px] shadow-[inset_0_3px_8px_rgba(255,255,255,0.9),inset_0_-6px_16px_rgba(0,0,0,0.12)] ring-1 ring-inset ring-black/5" />
+                </div>
+              </TiltCard>
             ) : (
-              // Múltiples fotos: Carrusel interactivo con efecto 3D
+              // Múltiples fotos en carrusel con Tilt 3D interactivo
               <Carousel.Root 
                 opts={{ loop: false, align: 'center' }} 
                 setApi={(api) => {
@@ -233,29 +237,32 @@ export default function PetDetails() {
                     window.dispatchEvent(new CustomEvent('carousel-init', { detail: api.scrollSnapList().length }));
                   }, 100);
                 }} 
-                className="w-full"
+                className="w-full overflow-visible"
               >
-                <Carousel.Content>
+                <Carousel.Content className="overflow-visible py-2">
                   {allImages.map((imgUrl, idx) => (
-                    <Carousel.Item key={idx} className="basis-full">
-                      <div className="relative overflow-hidden aspect-square rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.14),0_8px_16px_rgba(0,0,0,0.06)] border border-gray-100 bg-white group">
-                        <img 
-                          alt={`${pet.nombre} ${idx + 1}`} 
-                          src={imgUrl} 
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                          onError={(e) => { e.currentTarget.src = fallbackImg; }} 
-                        />
-                        <div className="pointer-events-none absolute inset-0 rounded-[36px] shadow-[inset_0_3px_6px_rgba(255,255,255,0.9),inset_0_-4px_12px_rgba(0,0,0,0.08)] ring-1 ring-inset ring-black/5" />
-                      </div>
+                    <Carousel.Item key={idx} className="basis-full p-2 overflow-visible">
+                      <TiltCard maxTilt={14} scale={1.03}>
+                        <div className="relative overflow-hidden aspect-square rounded-[36px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25),0_10px_25px_-5px_rgba(0,0,0,0.12)] border border-gray-100 bg-white">
+                          <img 
+                            alt={`${pet.nombre} ${idx + 1}`} 
+                            src={imgUrl} 
+                            className="w-full h-full object-cover select-none pointer-events-none" 
+                            onError={(e) => { e.currentTarget.src = fallbackImg; }} 
+                          />
+                          {/* Glossy inner top highlight + bottom depth shadow */}
+                          <div className="pointer-events-none absolute inset-0 rounded-[36px] shadow-[inset_0_3px_8px_rgba(255,255,255,0.9),inset_0_-6px_16px_rgba(0,0,0,0.12)] ring-1 ring-inset ring-black/5" />
+                        </div>
+                      </TiltCard>
                     </Carousel.Item>
                   ))}
                 </Carousel.Content>
 
-                <Carousel.PrevTrigger className="absolute top-1/2 -left-4 sm:-left-12 z-20 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/90 backdrop-blur-md border border-gray-200 text-gray-800 shadow-[0_6px_16px_rgba(0,0,0,0.1)] hover:bg-white transition-all hover:scale-105 active:scale-95 disabled:opacity-30">
-                  <ChevronLeft className="w-5 h-5" />
+                <Carousel.PrevTrigger className="absolute top-1/2 -left-4 sm:-left-12 z-20 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/95 backdrop-blur-md border border-gray-200 text-gray-800 shadow-[0_8px_20px_rgba(0,0,0,0.14)] hover:bg-white hover:scale-110 active:scale-95 transition-all disabled:opacity-30">
+                  <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
                 </Carousel.PrevTrigger>
-                <Carousel.NextTrigger className="absolute top-1/2 -right-4 sm:-right-12 z-20 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/90 backdrop-blur-md border border-gray-200 text-gray-800 shadow-[0_6px_16px_rgba(0,0,0,0.1)] hover:bg-white transition-all hover:scale-105 active:scale-95 disabled:opacity-30">
-                  <ChevronRight className="w-5 h-5" />
+                <Carousel.NextTrigger className="absolute top-1/2 -right-4 sm:-right-12 z-20 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/95 backdrop-blur-md border border-gray-200 text-gray-800 shadow-[0_8px_20px_rgba(0,0,0,0.14)] hover:bg-white hover:scale-110 active:scale-95 transition-all disabled:opacity-30">
+                  <ChevronRight className="w-5 h-5 stroke-[2.5]" />
                 </Carousel.NextTrigger>
 
                 <SlideCounter totalCount={allImages.length} />

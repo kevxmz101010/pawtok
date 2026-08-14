@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BlurFade } from '../components/ui/blur-fade';
-import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle, Lock, ShieldCheck, FileText } from 'lucide-react';
+import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle, Lock, ShieldCheck, FileText, Plus, CheckCircle2 } from 'lucide-react';
 import Header from '../components/Header';
 import FullscreenToast from '../components/FullscreenToast';
 import Cropper from 'react-easy-crop';
@@ -25,6 +25,53 @@ export default function EditPet() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [error, setError] = useState('');
   const [historial, setHistorial] = useState<any[]>([]);
+
+  // Medical Record Addition State for Shelter
+  const [showAddMedForm, setShowAddMedForm] = useState(false);
+  const [newMedFecha, setNewMedFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [newMedDesc, setNewMedDesc] = useState('');
+  const [newMedVacuna, setNewMedVacuna] = useState(false);
+  const [newMedDesparasitacion, setNewMedDesparasitacion] = useState(false);
+  const [isSubmittingMed, setIsSubmittingMed] = useState(false);
+
+  const handleSaveNewMedRecord = async () => {
+    if (!newMedDesc.trim()) {
+      showToast('Por favor, ingresa una descripción para el tratamiento o vacuna.', 'error');
+      return;
+    }
+    setIsSubmittingMed(true);
+    try {
+      const res = await fetch(`/api/mascotas/${id}/historial`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          fecha: newMedFecha,
+          descripcion: newMedDesc.trim(),
+          vacuna: newMedVacuna,
+          desparasitacion: newMedDesparasitacion
+        })
+      });
+      if (res.ok) {
+        showToast('¡Registro médico agregado al historial con éxito!', 'success');
+        setNewMedDesc('');
+        setNewMedVacuna(false);
+        setNewMedDesparasitacion(false);
+        setShowAddMedForm(false);
+        const resH = await fetch(`/api/mascotas/${id}/historial`);
+        if (resH.ok) {
+          setHistorial(await resH.json());
+        }
+      } else {
+        showToast('Ocurrió un error al guardar el registro médico.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error de conexión con el servidor.', 'error');
+    } finally {
+      setIsSubmittingMed(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -618,21 +665,32 @@ export default function EditPet() {
               ></textarea>
             </section>
 
-            {/* HISTORIAL MÉDICO VALIDADO Y PROTEGIDO (RF 1.4, RN 1.4 / CP-GM-07) */}
+            {/* HISTORIAL MÉDICO VALIDADO Y GESTIONABLE (RF 1.4, RN 1.4 / CP-GM-07) */}
             <section className="space-y-5 pt-6 border-t border-gray-100">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <div className="flex items-center gap-2.5">
-                    <h2 className="text-xl font-bold text-gray-900">Historial Médico Validado</h2>
+                    <h2 className="text-xl font-bold text-gray-900">Historial Médico</h2>
                     <span className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-sm">
-                      <Lock className="w-3.5 h-3.5 text-amber-600" /> Modo Solo Lectura
+                      <Lock className="w-3.5 h-3.5 text-amber-600" /> Aprobados: Solo Lectura
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 font-medium mt-1">Vacunas, diagnósticos y tratamientos certificados por administración.</p>
                 </div>
-                <span className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-extrabold rounded-xl flex items-center gap-1.5 shadow-sm">
-                  <ShieldCheck className="w-4 h-4 text-green-600" /> Datos Médicos Verificados
-                </span>
+                
+                <div className="flex items-center gap-2.5">
+                  <span className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-extrabold rounded-xl flex items-center gap-1.5 shadow-sm">
+                    <ShieldCheck className="w-4 h-4 text-green-600" /> Datos Médicos Verificados
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddMedForm(!showAddMedForm)}
+                    className="px-3.5 py-1.5 bg-[#0B84FF] hover:bg-[#0071e3] text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-1.5"
+                  >
+                    {showAddMedForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    {showAddMedForm ? 'Cancelar' : 'Añadir Registro Médico'}
+                  </button>
+                </div>
               </div>
 
               {/* AVISO DE PROTECCIÓN DE DATOS MÉDICOS */}
@@ -644,11 +702,73 @@ export default function EditPet() {
                   <strong className="font-bold block text-sm mb-1 text-amber-900 flex items-center gap-1.5">
                     Aviso de Protección de Datos Médicos (RF 1.4 / RN 1.4):
                   </strong>
-                  La sección de historial médico aprobado se encuentra bloqueada en modo solo lectura para salvaguardar la veracidad clínica del animal. El sistema no permite alteraciones, modificaciones ni eliminación de diagnósticos o vacunas aprobadas.
+                  La sección de historial médico aprobado se encuentra bloqueada en modo solo lectura para salvaguardar la veracidad clínica del animal. El sistema no permite alteraciones, modificaciones ni eliminación de diagnósticos o vacunas aprobadas. Como refugio puedes registrar nuevas vacunas o atenciones médicas mediante el botón superior.
                 </div>
               </div>
 
-              {/* REGISTROS MÉDICOS PROTEGIDOS */}
+              {/* FORMULARIO PARA AGREGAR NUEVO REGISTRO CLÍNICO */}
+              {showAddMedForm && (
+                <div className="p-6 bg-blue-50/40 border border-blue-100 rounded-3xl space-y-4">
+                  <span className="text-xs font-bold text-gray-700 block uppercase tracking-wider">
+                    Nuevo Registro Médico / Vacuna
+                  </span>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="sm:w-1/3">
+                      <label className="block text-xs font-bold text-gray-600 mb-1.5">Fecha</label>
+                      <input 
+                        type="date" 
+                        value={newMedFecha} 
+                        onChange={(e) => setNewMedFecha(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:border-[#0B84FF] outline-none"
+                      />
+                    </div>
+                    <div className="sm:w-2/3 flex items-center gap-6 pt-2 sm:pt-6">
+                      <label className="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer select-none">
+                        <input 
+                          type="checkbox" 
+                          checked={newMedVacuna} 
+                          onChange={(e) => setNewMedVacuna(e.target.checked)}
+                          className="w-4 h-4 rounded text-[#0B84FF] focus:ring-[#0B84FF]"
+                        />
+                        <span>¿Es Vacuna?</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer select-none">
+                        <input 
+                          type="checkbox" 
+                          checked={newMedDesparasitacion} 
+                          onChange={(e) => setNewMedDesparasitacion(e.target.checked)}
+                          className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                        />
+                        <span>¿Es Desparasitación?</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1.5">Descripción / Tratamiento / Diagnóstico</label>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input 
+                        type="text" 
+                        value={newMedDesc} 
+                        onChange={(e) => setNewMedDesc(e.target.value)}
+                        placeholder="Ej. Refuerzo vacuna antirrábica / Control veterinario..."
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:border-[#0B84FF] outline-none"
+                      />
+                      <button 
+                        type="button" 
+                        disabled={isSubmittingMed}
+                        onClick={handleSaveNewMedRecord}
+                        className="px-5 py-2.5 bg-[#0B84FF] hover:bg-[#0071e3] disabled:opacity-50 text-white text-sm font-bold rounded-xl transition shadow-sm flex items-center justify-center gap-1.5 shrink-0"
+                      >
+                        <Plus className="w-4 h-4" /> Guardar en Historial
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* REGISTROS MÉDICOS EXISTENTES PROTEGIDOS */}
               <div className="space-y-3">
                 {historial.length > 0 ? (
                   historial.map((reg: any, idx: number) => (
@@ -674,9 +794,9 @@ export default function EditPet() {
                   ))
                 ) : (
                   <div className="p-5 rounded-2xl bg-gray-50/60 border border-dashed border-gray-200 text-center">
-                    <p className="text-xs text-gray-600 font-semibold">Vacunación y ficha clínica certificada por el veterinario administrador.</p>
-                    <span className="inline-flex items-center gap-1 text-[11px] text-gray-400 font-medium mt-1">
-                      <Lock className="w-3 h-3" /> Registros protegidos contra modificaciones por política de seguridad clínica.
+                    <p className="text-xs text-gray-600 font-semibold">Aún no hay registros médicos previos para esta mascota.</p>
+                    <span className="inline-flex items-center gap-1 text-[11px] text-[#0B84FF] font-semibold mt-1">
+                      Usa el botón "Añadir Registro Médico" para registrar sus vacunas o revisiones clínicas.
                     </span>
                   </div>
                 )}

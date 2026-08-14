@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BlurFade } from '../components/ui/blur-fade';
-import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle, Plus, FileText, CheckCircle2, ShieldCheck, Trash2 } from 'lucide-react';
 import Header from '../components/Header';
 import FullscreenToast from '../components/FullscreenToast';
 import Cropper from 'react-easy-crop';
@@ -27,6 +27,37 @@ export default function AddPet() {
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [selectedPersonalities, setSelectedPersonalities] = useState<string[]>([]);
   const [toastMsg, setToastMsg] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  // Medical History State
+  const [medicalRecords, setMedicalRecords] = useState<Array<{ fecha: string; descripcion: string; vacuna: boolean; desparasitacion: boolean }>>([]);
+  const [newMedFecha, setNewMedFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [newMedDesc, setNewMedDesc] = useState('');
+  const [newMedVacuna, setNewMedVacuna] = useState(false);
+  const [newMedDesparasitacion, setNewMedDesparasitacion] = useState(false);
+
+  const handleAddMedicalRecord = () => {
+    if (!newMedDesc.trim()) {
+      showToast('Ingresa una descripción para el registro médico.', 'error');
+      return;
+    }
+    setMedicalRecords(prev => [
+      ...prev,
+      {
+        fecha: newMedFecha,
+        descripcion: newMedDesc.trim(),
+        vacuna: newMedVacuna,
+        desparasitacion: newMedDesparasitacion
+      }
+    ]);
+    setNewMedDesc('');
+    setNewMedVacuna(false);
+    setNewMedDesparasitacion(false);
+    showToast('Registro médico agregado a la lista', 'success');
+  };
+
+  const handleRemoveMedicalRecord = (index: number) => {
+    setMedicalRecords(prev => prev.filter((_, i) => i !== index));
+  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -246,6 +277,24 @@ export default function AddPet() {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
+        const savedPet = await res.json();
+        
+        // Guardar registros médicos en base de datos si fueron añadidos
+        if (savedPet?.id && medicalRecords.length > 0) {
+          for (const rec of medicalRecords) {
+            try {
+              await fetch(`/api/mascotas/${savedPet.id}/historial`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(rec)
+              });
+            } catch (errMed) {
+              console.error('Error al guardar historial médico:', errMed);
+            }
+          }
+        }
+
         showToast('¡Mascota publicada con éxito!', 'success');
         setTimeout(() => {
           navigate('/refugio');
@@ -536,6 +585,125 @@ export default function AddPet() {
                 placeholder="Escribe aquí su historia..."
                 className="w-full px-5 py-4 rounded-[1.5rem] bg-gray-50/80 border border-gray-200 focus:bg-white focus:border-[#0B84FF] outline-none transition-all resize-none font-medium text-gray-700 leading-relaxed"
               ></textarea>
+            </section>
+
+            {/* HISTORIAL MÉDICO Y VACUNACIÓN INICIAL (OPCIONAL) */}
+            <section className="space-y-6 pt-6 border-t border-gray-100">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-900">Historial Médico y Vacunación</h2>
+                    <span className="px-2.5 py-0.5 bg-blue-50 text-[#0B84FF] text-xs font-bold rounded-full">
+                      Opcional
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 font-medium mt-1">
+                    Registra vacunas, desparasitaciones o diagnósticos médicos para que aparezcan en el perfil público de la mascota.
+                  </p>
+                </div>
+                <span className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm">
+                  <ShieldCheck className="w-4 h-4 text-green-600" /> Registro Clínico Oficial
+                </span>
+              </div>
+
+              {/* FORMULARIO AGREGAR REGISTRO */}
+              <div className="p-6 bg-blue-50/40 border border-blue-100 rounded-3xl space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="sm:w-1/3">
+                    <label className="block text-xs font-bold text-gray-600 mb-1.5">Fecha</label>
+                    <input 
+                      type="date" 
+                      value={newMedFecha} 
+                      onChange={(e) => setNewMedFecha(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:border-[#0B84FF] outline-none"
+                    />
+                  </div>
+                  <div className="sm:w-2/3 flex items-center gap-6 pt-2 sm:pt-6">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={newMedVacuna} 
+                        onChange={(e) => setNewMedVacuna(e.target.checked)}
+                        className="w-4 h-4 rounded text-[#0B84FF] focus:ring-[#0B84FF]"
+                      />
+                      <span>¿Es Vacuna?</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={newMedDesparasitacion} 
+                        onChange={(e) => setNewMedDesparasitacion(e.target.checked)}
+                        className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                      />
+                      <span>¿Es Desparasitación?</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5">Descripción / Tratamiento / Vacuna</label>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input 
+                      type="text" 
+                      value={newMedDesc} 
+                      onChange={(e) => setNewMedDesc(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddMedicalRecord();
+                        }
+                      }}
+                      placeholder="Ej. Vacuna Séxtuple / Desparasitación interna al día..."
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:border-[#0B84FF] outline-none"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={handleAddMedicalRecord}
+                      className="px-5 py-2.5 bg-[#0B84FF] hover:bg-[#0071e3] text-white text-sm font-bold rounded-xl transition shadow-sm flex items-center justify-center gap-1.5 shrink-0"
+                    >
+                      <Plus className="w-4 h-4" /> Agregar Registro
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* LISTA DE REGISTROS AÑADIDOS */}
+              {medicalRecords.length > 0 ? (
+                <div className="space-y-2.5">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
+                    Registros que se publicarán ({medicalRecords.length})
+                  </span>
+                  {medicalRecords.map((rec, index) => (
+                    <div key={index} className="p-4 rounded-2xl bg-white border border-gray-200 flex items-center justify-between gap-4 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0B84FF] flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{rec.descripcion}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500 font-medium">
+                            <span>{rec.fecha}</span>
+                            {rec.vacuna && <span className="px-2 py-0.5 bg-blue-50 text-[#0B84FF] font-bold rounded-md text-[10px]">Vacuna</span>}
+                            {rec.desparasitacion && <span className="px-2 py-0.5 bg-purple-50 text-purple-700 font-bold rounded-md text-[10px]">Desparasitación</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemoveMedicalRecord(index)}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition"
+                        title="Eliminar de la lista"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-gray-50/70 border border-dashed border-gray-200 text-center text-xs text-gray-400 font-medium">
+                  Aún no has agregado registros médicos a esta mascota (puedes agregarlos ahora o posteriormente en la ficha de edición).
+                </div>
+              )}
             </section>
 
             {/* SUBMIT BUTTON */}

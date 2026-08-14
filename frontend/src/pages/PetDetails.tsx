@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, MapPin, Home, Syringe, Bug, Calendar, FileText, Check, Plus, X } from 'lucide-react';
 import Notification from '../components/Notification';
 import { ToastMessage, MascotaDTO } from '../types';
@@ -255,13 +256,23 @@ export default function PetDetails() {
               </div>
               <div className="flex items-center gap-3">
                 {user && (
-                  <button
+                  <motion.button
+                    whileHover="hover"
+                    whileTap={{ scale: 0.94 }}
                     onClick={() => setShowAddForm(!showAddForm)}
-                    className="px-4 py-2 bg-blue-50 text-blue-600 font-bold rounded-xl hover:bg-blue-100 transition text-sm flex items-center gap-1.5"
+                    className="px-4 py-2 bg-blue-50 text-[#0B84FF] font-bold rounded-xl hover:bg-blue-100 transition-all text-sm flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
-                    {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                    {showAddForm ? 'Cancelar' : 'Agregar Registro'}
-                  </button>
+                    <motion.span
+                      variants={{
+                        hover: { rotate: 360, scale: 1.2 }
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                      className="inline-flex items-center justify-center"
+                    >
+                      {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4 stroke-[2.5]" />}
+                    </motion.span>
+                    <span>{showAddForm ? 'Cancelar' : 'Agregar Registro'}</span>
+                  </motion.button>
                 )}
                 <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-500">
                   <FileText className="w-6 h-6" />

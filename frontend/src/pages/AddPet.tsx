@@ -651,13 +651,24 @@ export default function AddPet() {
                       placeholder="Ej. Vacuna Séxtuple / Desparasitación interna al día..."
                       className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:border-[#0B84FF] outline-none"
                     />
-                    <button 
+                    <motion.button 
                       type="button" 
+                      whileHover="hover"
+                      whileTap={{ scale: 0.94 }}
                       onClick={handleAddMedicalRecord}
-                      className="px-5 py-2.5 bg-[#abd5ff] hover:bg-[#6bb5ff] text-blue-900 text-sm font-bold rounded-4xl shadow-inner shadow-white/80 transition flex items-center justify-center gap-1.5 shrink-0"
+                      className="px-5 py-2.5 bg-[#0B84FF] hover:bg-[#0071e3] text-white text-sm font-bold rounded-2xl shadow-sm hover:shadow-[0_6px_20px_rgba(11,132,255,0.3)] transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer group"
                     >
-                      <Plus className="w-4 h-4" /> Agregar Registro
-                    </button>
+                      <motion.span
+                        variants={{
+                          hover: { rotate: 360, scale: 1.25 }
+                        }}
+                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                        className="inline-flex items-center justify-center"
+                      >
+                        <Plus className="w-4 h-4 stroke-[2.5]" />
+                      </motion.span>
+                      <span>Agregar Registro</span>
+                    </motion.button>
                   </div>
                 </div>
               </div>

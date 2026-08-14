@@ -147,8 +147,9 @@ export default function PetDetails() {
         
         {/* APP ICON (Pet Profile) */}
         <BlurFade delay={0.1} inView>
-          <div className="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-[32px] overflow-hidden shadow-[0_12px_24px_rgba(0,0,0,0.12)] border border-gray-100 bg-white">
+          <div className="relative w-20 h-20 md:w-24 md:h-24 mx-auto rounded-[32px] overflow-hidden shadow-[0_16px_32px_rgba(0,0,0,0.12)] border border-gray-100/80 bg-white">
             <img src={fotoUrl} alt={pet.nombre} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
+            <div className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_2px_4px_rgba(255,255,255,0.9),inset_0_-3px_8px_rgba(0,0,0,0.06)] ring-1 ring-inset ring-black/5" />
           </div>
           <p className="text-center mt-3 text-sm font-semibold text-gray-500">{(pet as any).refugioNombre || `Refugio #${pet.idRefugio || 'Pawtok'}`}</p>
         </BlurFade>
@@ -205,21 +206,22 @@ export default function PetDetails() {
           </div>
         </BlurFade>
 
-        {/* 1. GALERÍA DE FOTOS (Exactamente las fotos subidas con 100% de opacidad y nitidez) */}
+        {/* 1. GALERÍA DE FOTOS (Efecto 3D con sombra profunda e inner shadow superior) */}
         <BlurFade delay={0.3} inView className="w-full mt-10 mb-10 overflow-hidden flex flex-col items-center">
           <div className="mx-auto max-w-md md:max-w-lg w-full relative px-6 md:px-12">
             {allImages.length === 1 ? (
-              // Una sola foto: Vista nítida directa y sin duplicados ficticios
-              <div className="overflow-hidden aspect-square rounded-3xl shadow-lg border border-gray-100/90 bg-white">
+              // Una sola foto: Efecto 3D nítido y con inner shadow
+              <div className="relative overflow-hidden aspect-square rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.14),0_8px_16px_rgba(0,0,0,0.06)] border border-gray-100 bg-white group">
                 <img 
                   alt={pet.nombre} 
                   src={allImages[0]} 
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                   onError={(e) => { e.currentTarget.src = fallbackImg; }} 
                 />
+                <div className="pointer-events-none absolute inset-0 rounded-[36px] shadow-[inset_0_3px_6px_rgba(255,255,255,0.9),inset_0_-4px_12px_rgba(0,0,0,0.08)] ring-1 ring-inset ring-black/5" />
               </div>
             ) : (
-              // Múltiples fotos: Carrusel interactivo
+              // Múltiples fotos: Carrusel interactivo con efecto 3D
               <Carousel.Root 
                 opts={{ loop: false, align: 'center' }} 
                 setApi={(api) => {
@@ -236,22 +238,23 @@ export default function PetDetails() {
                 <Carousel.Content>
                   {allImages.map((imgUrl, idx) => (
                     <Carousel.Item key={idx} className="basis-full">
-                      <div className="overflow-hidden aspect-square rounded-3xl shadow-lg border border-gray-100/90 bg-white">
+                      <div className="relative overflow-hidden aspect-square rounded-[36px] shadow-[0_20px_50px_rgba(0,0,0,0.14),0_8px_16px_rgba(0,0,0,0.06)] border border-gray-100 bg-white group">
                         <img 
                           alt={`${pet.nombre} ${idx + 1}`} 
                           src={imgUrl} 
-                          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                           onError={(e) => { e.currentTarget.src = fallbackImg; }} 
                         />
+                        <div className="pointer-events-none absolute inset-0 rounded-[36px] shadow-[inset_0_3px_6px_rgba(255,255,255,0.9),inset_0_-4px_12px_rgba(0,0,0,0.08)] ring-1 ring-inset ring-black/5" />
                       </div>
                     </Carousel.Item>
                   ))}
                 </Carousel.Content>
 
-                <Carousel.PrevTrigger className="absolute top-1/2 -left-4 sm:-left-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-md hover:bg-gray-50 transition-colors disabled:opacity-30">
+                <Carousel.PrevTrigger className="absolute top-1/2 -left-4 sm:-left-12 z-20 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/90 backdrop-blur-md border border-gray-200 text-gray-800 shadow-[0_6px_16px_rgba(0,0,0,0.1)] hover:bg-white transition-all hover:scale-105 active:scale-95 disabled:opacity-30">
                   <ChevronLeft className="w-5 h-5" />
                 </Carousel.PrevTrigger>
-                <Carousel.NextTrigger className="absolute top-1/2 -right-4 sm:-right-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-md hover:bg-gray-50 transition-colors disabled:opacity-30">
+                <Carousel.NextTrigger className="absolute top-1/2 -right-4 sm:-right-12 z-20 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/90 backdrop-blur-md border border-gray-200 text-gray-800 shadow-[0_6px_16px_rgba(0,0,0,0.1)] hover:bg-white transition-all hover:scale-105 active:scale-95 disabled:opacity-30">
                   <ChevronRight className="w-5 h-5" />
                 </Carousel.NextTrigger>
 

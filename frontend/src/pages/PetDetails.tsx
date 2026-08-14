@@ -274,9 +274,6 @@ export default function PetDetails() {
                     <span>{showAddForm ? 'Cancelar' : 'Agregar Registro'}</span>
                   </motion.button>
                 )}
-                <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-500">
-                  <FileText className="w-6 h-6" />
-                </div>
               </div>
             </div>
 

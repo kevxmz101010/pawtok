@@ -263,7 +263,9 @@ export default function RefugioDashboard() {
         setPublicaciones(prev => prev.filter(m => m.id !== id));
         showToast('Mascota eliminada correctamente', 'success');
       } else {
-        showToast('Error al eliminar la mascota', 'error');
+        const errorData = await res.json().catch(() => null);
+        const errMsg = errorData?.message || 'No se puede eliminar la mascota porque tiene un proceso de adopción aprobado o en seguimiento activo';
+        showToast(errMsg, 'error');
       }
     } catch (err) {
       showToast('Error de conexión', 'error');

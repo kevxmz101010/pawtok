@@ -52,6 +52,10 @@ const AdminMascotas = () => {
       if (res.ok) {
         setMascotas(mascotas.filter(m => m.id !== id));
         handleShowToast('Mascota eliminada correctamente', 'success');
+      } else {
+        const errorData = await res.json().catch(() => null);
+        const errMsg = errorData?.message || 'No se puede eliminar la mascota porque tiene un proceso de adopción aprobado o en seguimiento activo';
+        handleShowToast(errMsg, 'error');
       }
     } catch (err) {
       handleShowToast('Error al eliminar mascota', 'error');

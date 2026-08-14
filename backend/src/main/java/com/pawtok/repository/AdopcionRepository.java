@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface AdopcionRepository extends JpaRepository<Adopcion, Long> {
     List<Adopcion> findByUsuarioId(Long usuarioId);
+    List<Adopcion> findByMascotaId(Long mascotaId);
     List<Adopcion> findByMascotaIdRefugio(Long idRefugio);
     java.util.List<com.pawtok.model.Adopcion> findByUsuarioIdOrderBySolicitadoEnDesc(Long id);
     long countByUsuarioId(Long id);

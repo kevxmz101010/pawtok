@@ -233,12 +233,8 @@ public class MascotaService {
 
         // RN 1.8 / RF 1.8 (CP-GM-13): Validar si la mascota tiene un proceso de adopción aprobado o en seguimiento activo
         List<com.pawtok.model.Adopcion> adopciones = adopcionRepository.findByMascotaId(mascota.getId());
-        boolean tieneAdopcionActiva = (adopciones != null && adopciones.stream().anyMatch(a -> {
-            String est = a.getEstadoString();
-            if (est == null) return false;
-            String lower = est.toLowerCase();
-            return lower.contains("aprob") || lower.contains("seguimiento") || lower.equals("adoptada") || lower.equals("adoptado");
-        })) || mascota.getEstado() == EstadoMascota.ADOPTADO;
+        boolean tieneAdopcionActiva = (adopciones != null && !adopciones.isEmpty()) 
+                || mascota.getEstado() == EstadoMascota.ADOPTADO;
 
         if (tieneAdopcionActiva) {
             throw new IllegalArgumentException("No se puede eliminar la mascota porque tiene un proceso de adopción aprobado o en seguimiento activo");

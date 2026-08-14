@@ -319,14 +319,12 @@ export default function PetDetails() {
                       checked={newVacuna} 
                       onChange={setNewVacuna} 
                       label="Vacuna"
-                      icon={<Syringe className="w-4 h-4" />}
                       activeColor="blue"
                     />
                     <AnimatedCheckbox 
                       checked={newDesparasitacion} 
                       onChange={setNewDesparasitacion} 
                       label="Desparasitación"
-                      icon={<Bug className="w-4 h-4" />}
                       activeColor="purple"
                     />
                   </div>

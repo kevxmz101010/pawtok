@@ -729,14 +729,12 @@ export default function EditPet() {
                         checked={newMedVacuna} 
                         onChange={setNewMedVacuna} 
                         label="¿Es Vacuna?"
-                        icon={<Syringe className="w-4 h-4" />}
                         activeColor="blue"
                       />
                       <AnimatedCheckbox 
                         checked={newMedDesparasitacion} 
                         onChange={setNewMedDesparasitacion} 
                         label="¿Es Desparasitación?"
-                        icon={<Bug className="w-4 h-4" />}
                         activeColor="purple"
                       />
                     </div>

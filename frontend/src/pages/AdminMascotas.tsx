@@ -2,19 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useConfirm } from '../context/ConfirmContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BarChart, Users, PawPrint, CheckCircle, Search, Calendar, MapPin, Edit, Trash2, Mail } from 'lucide-react';
+import { PawPrint, Plus, Search, Edit3, Trash2, Home } from 'lucide-react';
 import { BlurFade } from '../components/ui/blur-fade';
+import Header from '../components/Header';
+import AdminHeaderNav from '../components/AdminHeaderNav';
+import Notification from '../components/Notification';
+import { ToastMessage } from '../types';
+import { PetStatusToggle } from '../components/ui/pet-status-toggle';
 
 const AdminMascotas = () => {
   const confirm = useConfirm();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [mascotas, setMascotas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterEstado, setFilterEstado] = useState<'TODOS' | 'DISPONIBLE' | 'ADOPTADO'>('TODOS');
+
+  const handleShowToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToasts((prev) => [...prev, { id: Math.random().toString(36).substring(2, 9), type, message }]);
+  };
 
   useEffect(() => {
     if (!isAuthenticated || user?.rol !== 'ADMIN') {
-      navigate('/');
+      navigate('/login');
       return;
     }
     fetchMascotas();
@@ -40,129 +52,206 @@ const AdminMascotas = () => {
       const res = await fetch(`/api/mascotas/${id}`, { method: 'DELETE', credentials: 'include' });
       if (res.ok) {
         setMascotas(mascotas.filter(m => m.id !== id));
+        handleShowToast('Mascota eliminada correctamente', 'success');
+      } else {
+        const errorData = await res.json().catch(() => null);
+        const errMsg = (errorData?.message && errorData.message !== 'Ha ocurrido un error inesperado') 
+          ? errorData.message 
+          : 'No se puede eliminar la mascota porque tiene un proceso de adopción aprobado o en seguimiento activo';
+        handleShowToast(errMsg, 'error');
       }
     } catch (err) {
-      console.error(err);
+      handleShowToast('Error al eliminar mascota', 'error');
     }
   };
 
-  const toggleEstado = async (id: number, estadoActual: string) => {
-    const nuevoEstado = estadoActual === 'DISPONIBLE' ? 'ADOPTADO' : 'DISPONIBLE';
+  const toggleEstado = async (id: number, nuevoEstado: string) => {
+    // Actualización optimista instantánea sin alertas
+    setMascotas(prev => prev.map(m => m.id === id ? { ...m, estado: nuevoEstado } : m));
     try {
-      const res = await fetch(`/api/mascotas/${id}/estado?estado=${nuevoEstado}`, { method: 'PUT', credentials: 'include' });
-      if (res.ok) {
-        setMascotas(mascotas.map(m => m.id === id ? { ...m, estado: nuevoEstado } : m));
-      }
+      await fetch(`/api/mascotas/${id}/estado?estado=${nuevoEstado}`, { method: 'PUT', credentials: 'include' });
     } catch (err) {
-      console.error(err);
+      console.error('Error al cambiar estado:', err);
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">Cargando...</div>;
+  const filteredMascotas = mascotas.filter(m => {
+    const matchesSearch = m.nombre?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          m.raza?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          m.refugioNombre?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesEstado = filterEstado === 'TODOS' || m.estado === filterEstado;
+    return matchesSearch && matchesEstado;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 border-3 border-[#0B84FF] border-t-transparent rounded-full animate-spin" />
+        <span className="text-sm font-semibold text-gray-400">Cargando mascotas...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen bg-[#F4F7FE] font-sans selection:bg-[#0B84FF] selection:text-white overflow-hidden">
+    <div className="min-h-screen font-sans text-gray-800 bg-gray-50/50 selection:bg-[#0B84FF] selection:text-white pb-20 relative">
       
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-white/80 backdrop-blur-2xl border-r border-white/50 flex flex-col shadow-[15px_0_30px_-15px_rgba(0,0,0,0.05)] relative z-20 h-full">
-        <div className="p-8 pb-4">
-          <Link to="/" className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-[#0B84FF] to-[#005bb5] drop-shadow-sm flex items-center gap-2">
-            Pawtok <span className="text-[#0B84FF]">.</span>
-          </Link>
-          <div className="mt-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Admin Panel</div>
-        </div>
+      {/* GLOBAL HEADER */}
+      <Header
+        onShowToast={handleShowToast}
+        onSelectDrop={() => {}}
+        searchQuery=""
+        setSearchQuery={() => {}}
+      />
 
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto pt-4">
-          <Link to="/admin" className="flex items-center gap-3 px-4 py-3 text-gray-500 rounded-2xl hover:bg-gray-50 hover:text-[#0B84FF] transition font-semibold">
-            <BarChart size={22} />
-            <span>Resumen</span>
-          </Link>
-          
-          <div className="px-4 py-2 mt-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Gestión</div>
-          <Link to="/admin" className="flex items-center gap-3 px-4 py-3 text-gray-500 rounded-2xl hover:bg-gray-50 hover:text-[#0B84FF] transition font-semibold">
-            <Users size={22} />
-            <span>Usuarios & Refugios</span>
-          </Link>
-          <div className="flex items-center gap-3 px-4 py-3 bg-[#0B84FF] text-white rounded-2xl shadow-md font-semibold">
-            <PawPrint size={22} />
-            <span>Mascotas</span>
+      {/* MAIN CONTAINER */}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-28">
+        
+        {/* ADMIN PROFILE & TAB NAV HEADER */}
+        <AdminHeaderNav activeTab="mascotas" title="Gestión de Mascotas" subtitle="Administra las publicaciones de la plataforma" />
+
+        <BlurFade delay={0.15} inView>
+          {/* SEARCH & ACTION BAR */}
+          <div className="bg-white/90 backdrop-blur-xl border border-gray-100/80 p-4 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.03)] mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre, raza o refugio..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200/80 rounded-xl pl-10 pr-4 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#0B84FF]/20 focus:border-[#0B84FF] transition"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-1.5 overflow-x-auto">
+                {(['TODOS', 'DISPONIBLE', 'ADOPTADO'] as const).map((estado) => (
+                  <button
+                    key={estado}
+                    onClick={() => setFilterEstado(estado)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                      filterEstado === estado
+                        ? 'bg-[#0B84FF] text-white shadow-md shadow-blue-500/20'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200/70'
+                    }`}
+                  >
+                    {estado === 'TODOS' ? 'Todas' : estado}
+                  </button>
+                ))}
+              </div>
+
+              <Link
+                to="/dashboard/add-pet"
+                className="px-4 py-2 bg-[#0B84FF] text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 hover:bg-blue-600 transition flex items-center gap-1.5 shrink-0"
+              >
+                <Plus size={16} /> Publicar
+              </Link>
+            </div>
           </div>
-          <Link to="/admin/solicitudes-refugio" className="flex items-center gap-3 px-4 py-3 text-gray-500 rounded-2xl hover:bg-gray-50 hover:text-[#0B84FF] transition font-semibold">
-            <CheckCircle size={22} />
-            <span>Solicitudes</span>
-          </Link>
-          <Link to="/admin/mensajes" className="flex items-center gap-3 px-4 py-3 text-gray-500 rounded-2xl hover:bg-gray-50 hover:text-[#0B84FF] transition font-semibold">
-            <Mail size={22} />
-            <span>Mensajes</span>
-          </Link>
-        </nav>
 
-        <div className="p-4 border-t border-gray-100">
-          <div className="bg-gray-50 p-4 rounded-2xl flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0B84FF] to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
-              A
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold text-gray-900 truncate">Admin</div>
-              <div className="text-xs text-gray-500 truncate">{user?.email}</div>
-            </div>
-            <button onClick={logout} className="text-gray-400 hover:text-red-500 transition cursor-pointer">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto relative z-10 p-8 lg:p-12">
-        <BlurFade delay={0.1} inView>
-          <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">Gestión de Mascotas</h1>
-              <p className="text-gray-500 mt-2 font-medium">Administra todas las mascotas de la plataforma.</p>
-            </div>
-          </header>
-
-          <div className="bg-white/80 backdrop-blur-xl border border-white rounded-3xl shadow-[0px_10px_25px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
+          {/* MASCOTAS TABLE */}
+          <div className="bg-white/90 backdrop-blur-xl border border-gray-100/80 rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.04)] overflow-hidden">
             <div className="overflow-x-auto p-4">
               <table className="w-full text-left border-separate border-spacing-y-2">
-                <thead className="text-gray-400 text-xs font-bold uppercase px-4">
+                <thead className="text-gray-400 text-xs font-semibold px-4 tracking-normal">
                   <tr>
-                    <th className="px-6 py-3">Mascota</th>
-                    <th className="px-6 py-3">Raza</th>
-                    <th className="px-6 py-3">Refugio</th>
-                    <th className="px-6 py-3">Estado</th>
-                    <th className="px-6 py-3 text-right">Acciones</th>
+                    <th className="px-6 py-3 font-medium">Mascota</th>
+                    <th className="px-6 py-3 font-medium">Categoría & Raza</th>
+                    <th className="px-6 py-3 font-medium">Refugio</th>
+                    <th className="px-6 py-3 font-medium">Estado</th>
+                    <th className="px-6 py-3 font-medium text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {mascotas.map(m => (
-                    <tr key={m.id} className="bg-gray-50/50 hover:bg-white transition rounded-2xl">
-                      <td className="px-6 py-4 rounded-l-2xl">
-                        <div className="flex items-center gap-3">
-                          <img src={m.imagenUrl?.startsWith('http') ? m.imagenUrl : `http://localhost:8080/uploads/${m.imagenUrl}`} alt={m.nombre} className="w-10 h-10 rounded-full object-cover shadow-sm bg-gray-200" />
-                          <div className="font-bold text-gray-900">{m.nombre}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{m.raza}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{m.refugioNombre || 'Refugio Central'}</td>
-                      <td className="px-6 py-4">
-                        <button onClick={() => toggleEstado(m.id, m.estado)} className={`px-3 py-1 text-xs font-bold rounded-xl transition shadow-sm border ${m.estado === 'DISPONIBLE' ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100' : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'}`}>
-                          {m.estado}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 text-right rounded-r-2xl">
-                        <Link to={`/dashboard/edit-pet/${m.id}`} className="px-3 py-1.5 text-xs font-bold text-[#0B84FF] bg-blue-50 border border-blue-100 hover:bg-blue-100 rounded-xl mr-2">Editar</Link>
-                        <button onClick={() => deleteMascota(m.id)} className="px-3 py-1.5 text-xs font-bold text-red-500 bg-red-50 border border-red-100 hover:bg-red-100 rounded-xl">Eliminar</button>
+                  {filteredMascotas.map((m) => {
+                    const fallbackImg = m.categoria?.toLowerCase() === 'gato'
+                      ? "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=300"
+                      : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=300";
+                    const fotoUrl = m.imagenUrl?.startsWith('http')
+                      ? m.imagenUrl
+                      : (m.imagenUrl ? `http://localhost:8080/uploads/${m.imagenUrl}` : fallbackImg);
+
+                    return (
+                      <tr key={m.id} className="bg-gray-50/60 hover:bg-blue-50/30 transition-colors rounded-2xl group">
+                        <td className="px-6 py-4 rounded-l-2xl">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-sm border border-gray-100 shrink-0 bg-gray-100">
+                              <img
+                                src={fotoUrl}
+                                alt={m.nombre}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => { e.currentTarget.src = fallbackImg; }}
+                              />
+                            </div>
+                            <div>
+                              <Link to={`/mascotas/${m.id}`} className="font-bold text-gray-900 hover:text-[#0B84FF] transition text-base block">
+                                {m.nombre}
+                              </Link>
+                              <span className="text-xs text-gray-400 font-medium">ID #{m.id}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-semibold text-gray-800">{m.raza || 'Mestizo'}</div>
+                          <span className="inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-gray-100 text-gray-600">
+                            {m.categoria || 'Mascota'}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-600 font-semibold">
+                            <Home size={14} className="text-[#0B84FF]" />
+                            <span>{m.refugioNombre || `Refugio #${m.idRefugio || 'Pawtok'}`}</span>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <PetStatusToggle
+                            status={m.estado}
+                            onChangeStatus={(nuevoEstado) => toggleEstado(m.id, nuevoEstado)}
+                          />
+                        </td>
+
+                        <td className="px-6 py-4 text-right rounded-r-2xl">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              to={`/dashboard/edit-pet/${m.id}`}
+                              className="p-2 text-[#0B84FF] bg-blue-50 border border-blue-100 hover:bg-blue-100 rounded-xl transition"
+                              title="Editar Mascota"
+                            >
+                              <Edit3 size={16} />
+                            </Link>
+                            <button
+                              onClick={() => deleteMascota(m.id)}
+                              className="p-2 text-red-500 bg-red-50 border border-red-100 hover:bg-red-100 rounded-xl transition cursor-pointer"
+                              title="Eliminar Mascota"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {filteredMascotas.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-gray-400 text-sm">
+                        <PawPrint size={40} className="mx-auto mb-3 text-gray-300" />
+                        No se encontraron mascotas registradas
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         </BlurFade>
+
       </main>
+
+      <Notification toasts={toasts} onDismiss={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
     </div>
   );
 };

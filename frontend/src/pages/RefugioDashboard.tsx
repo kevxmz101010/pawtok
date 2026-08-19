@@ -1,11 +1,110 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useConfirm } from '../context/ConfirmContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import FullscreenToast from '../components/FullscreenToast';
 import { BlurFade } from '../components/ui/blur-fade';
+import { PetStatusToggle } from '../components/ui/pet-status-toggle';
+import { Plus, Eye, Trash2, Calendar, Phone, PawPrint, Clock, User, Check, X, Edit3, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+
+/**
+ * 🎛️ CONFIGURACIÓN DE LA BURBUJA LIQUID GLASS
+ * Puedes cambiar estos valores para ajustar el nivel de blur, brillo y sensibilidad de giro:
+ */
+const GLASS_CONFIG = {
+  blurLevel: '30px',        // 👈 Desenfoque del fondo (ej: '15px', '30px', '50px')
+  innerBlurLevel: '16px',   // 👈 Desenfoque de las fichas internas
+  saturate: '200%',         // 👈 Saturación de los colores detrás (ej: '150%', '200%', '250%')
+  opacityMax: 0.45,         // 👈 Opacidad superior del cristal (0.1 a 0.9)
+  opacityMin: 0.20,         // 👈 Opacidad inferior del cristal
+  wheelSensitivity: 80,     // 👈 Cantidad de giro de rueda para cerrar intencionalmente
+};
+
+/**
+ * Ícono animado de papelera cuya tapa se levanta al pasar el mouse por encima
+ */
+const AnimatedTrashIcon = ({ className = "w-4 h-4" }: { className?: string }) => {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={`${className} overflow-visible`}
+    >
+      <g className="transition-transform duration-250 ease-out origin-[4px_6px] group-hover:-translate-y-1.5 group-hover:-rotate-[28deg]">
+        <path d="M3 6h18" />
+        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      </g>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  );
+};
+
+/**
+ * Ícono animado de ojo con mirada curiosa, parpadeo tierno y brillo que reacciona en hover
+ */
+const AnimatedEyeIcon = ({ className = "w-4 h-4" }: { className?: string }) => {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={`${className} overflow-visible`}
+    >
+      {/* Contorno del ojo */}
+      <path 
+        d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" 
+        className="transition-transform duration-300 ease-out group-hover:scale-y-90 origin-center"
+      />
+      {/* Pupila e iris animados con mirada y brillo */}
+      <g className="transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:-translate-y-0.5 origin-center">
+        <circle cx="12" cy="12" r="3.5" className="stroke-current fill-white/20 transition-all duration-300 group-hover:fill-white/35" />
+        <circle cx="12" cy="12" r="1.8" className="fill-current" />
+        {/* Destello de brillo tierno */}
+        <circle cx="13.2" cy="10.8" r="0.7" className="fill-white stroke-none" />
+      </g>
+    </svg>
+  );
+};
+
+/**
+ * Ícono animado de lápiz que se inclina y raya rápidamente al hacer hover
+ */
+const AnimatedPencilIcon = ({ className = "w-4 h-4" }: { className?: string }) => {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={`${className} overflow-visible`}
+    >
+      {/* Cuerpo del lápiz con animación continua de rayado */}
+      <g className="origin-[3px_21px] transition-transform duration-200 group-hover:animate-scribble">
+        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+        <path d="m15 5 4 4" />
+      </g>
+      {/* Trazo que se dibuja en la punta */}
+      <path 
+        d="M2 22h5" 
+        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 stroke-current stroke-[2.5]" 
+      />
+    </svg>
+  );
+};
 
 /**
  * Dashboard del Refugio (RefugioDashboard.tsx)
@@ -15,8 +114,19 @@ import { BlurFade } from '../components/ui/blur-fade';
  */
 export default function RefugioDashboard() {
   const confirm = useConfirm();
-  const { user, isAuthenticated, logout, checkAuth, setUser } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, logout, checkAuth, setUser } = useAuth();
   const navigate = useNavigate();
+
+  // Control de Acceso Estricto por Rol (Solo REFUGIO y ADMIN)
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        navigate('/login', { replace: true });
+      } else if (user?.rol !== 'REFUGIO' && user?.rol !== 'ADMIN') {
+        navigate('/mascotas', { replace: true });
+      }
+    }
+  }, [authLoading, isAuthenticated, user, navigate]);
 
   const [nombre, setNombre] = useState(user?.nombre || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -28,6 +138,22 @@ export default function RefugioDashboard() {
     }
   }, [user]);
   const [foto, setFoto] = useState<File | null>(null);
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf') || !file.type.startsWith('image/')) {
+      showToast('No se permiten archivos PDF. Solo imágenes (JPG, PNG, WEBP).', 'error');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      showToast('La foto de perfil supera el límite de 3MB.', 'error');
+      e.target.value = '';
+      return;
+    }
+    setFoto(file);
+  };
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -41,6 +167,21 @@ export default function RefugioDashboard() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [citas, setCitas] = useState<any[]>([]);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [activePetBubble, setActivePetBubble] = useState<{
+    id: string;
+    tipo: string;
+    raza: string;
+    isCita?: boolean;
+    x: number;
+    y: number;
+  } | null>(null);
+  const lastBubbleOpenRef = React.useRef<number>(0);
+  const [hasScrolled, setHasScrolled] = useState(false);
+
+  const openPetBubble = (data: { id: string; tipo: string; raza: string; isCita?: boolean; x: number; y: number }) => {
+    lastBubbleOpenRef.current = Date.now();
+    setActivePetBubble(data);
+  };
 
   // Chat state
   const [mensajes, setMensajes] = useState<any[]>([]);
@@ -70,6 +211,62 @@ export default function RefugioDashboard() {
     }
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.nombre || 'Refugio')}&background=0B84FF&color=fff`;
   };
+
+  useEffect(() => {
+    let accumulatedWheel = 0;
+    let wheelTimer: any;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedSolicitud(null);
+        setActivePetBubble(null);
+        setPreviewImage(null);
+      }
+    };
+
+    // Detecta giro real de la rueda del ratón
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY > 4 || window.scrollY > 8) {
+        setHasScrolled(true);
+      }
+
+      // Ignorar micro-giros durante los primeros 250ms de apertura
+      if (Date.now() - lastBubbleOpenRef.current < 250) return;
+
+      const delta = Math.abs(e.deltaY) + Math.abs(e.deltaX);
+      if (delta > 0) {
+        accumulatedWheel += delta;
+        clearTimeout(wheelTimer);
+        wheelTimer = setTimeout(() => {
+          accumulatedWheel = 0;
+        }, 200);
+
+        if (accumulatedWheel >= GLASS_CONFIG.wheelSensitivity) {
+          setActivePetBubble(null);
+          accumulatedWheel = 0;
+        }
+      }
+    };
+
+    const handleScroll = () => {
+      if (window.scrollY > 8) {
+        setHasScrolled(true);
+      }
+      if (Date.now() - lastBubbleOpenRef.current < 250) return;
+      setActivePetBubble(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(wheelTimer);
+    };
+  }, []);
 
   /**
    * Carga inicial de datos: Trae las mascotas publicadas por este refugio y las solicitudes pendientes.
@@ -247,28 +444,30 @@ export default function RefugioDashboard() {
         setPublicaciones(prev => prev.filter(m => m.id !== id));
         showToast('Mascota eliminada correctamente', 'success');
       } else {
-        showToast('Error al eliminar la mascota', 'error');
+        const errorData = await res.json().catch(() => null);
+        const errMsg = (errorData?.message && errorData.message !== 'Ha ocurrido un error inesperado') 
+          ? errorData.message 
+          : 'No se puede eliminar la mascota porque tiene un proceso de adopción aprobado o en seguimiento activo';
+        showToast(errMsg, 'error');
       }
     } catch (err) {
       showToast('Error de conexión', 'error');
     }
   };
 
-  const handleChangeStatus = async (id: number, currentStatus: string) => {
-    const newStatus = currentStatus === 'DISPONIBLE' ? 'ADOPTADO' : 'DISPONIBLE';
+  const handleChangeStatus = async (id: number, targetStatus: string) => {
+    // Actualización optimista instantánea sin alertas
+    setPublicaciones(prev => prev.map(m => m.id === id ? { ...m, estado: targetStatus } : m));
     try {
-      const res = await fetch(`/api/mascotas/${id}/estado?estado=${newStatus}`, {
+      const res = await fetch(`/api/mascotas/${id}/estado?estado=${targetStatus}`, {
         method: 'PUT',
         credentials: 'include',
       });
       if (res.ok) {
-        setPublicaciones(prev => prev.map(m => m.id === id ? { ...m, estado: newStatus } : m));
-        showToast(`Estado actualizado a ${newStatus}`, 'success');
-      } else {
-        showToast('Error al actualizar estado', 'error');
+        fetchStats();
       }
     } catch (err) {
-      showToast('Error al actualizar estado', 'error');
+      console.error('Error al actualizar estado:', err);
     }
   };
 
@@ -347,8 +546,11 @@ export default function RefugioDashboard() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
   };
 
-  if (!isAuthenticated || !user) {
-    navigate('/login');
+  if (authLoading || !isAuthenticated || !user) {
+    return null;
+  }
+
+  if (user.rol !== 'REFUGIO' && user.rol !== 'ADMIN' && user.rol !== 'PENDIENTE_REFUGIO') {
     return null;
   }
 
@@ -388,18 +590,18 @@ export default function RefugioDashboard() {
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-28">
           
           {/* Profile Header (Centered without card background) */}
-          <BlurFade delay={0.1} inView>
-            <div className="flex flex-col items-center text-center mb-12">
-              <div className="relative w-32 h-32 mb-5 group">
+          <BlurFade delay={0.05} inView={false}>
+            <div className="flex flex-col items-center text-center mb-10">
+              <div className="relative w-32 h-32 mb-4 group">
                 <img src={getProfileImage()} alt="Perfil" className="w-full h-full rounded-full object-cover border-4 border-white shadow-xl" />
                 <label className="absolute bottom-0 right-0 bg-[#ffffff4b] backdrop-blur-md hover:bg-white/50 p-2.5 rounded-full text-white shadow-xl border-2 border-white cursor-pointer transition-transform hover:scale-105 active:scale-95">
-                  <input type="file" accept="image/*" onChange={e => setFoto(e.target.files?.[0] || null)} className="hidden" />
+                  <input type="file" accept="image/*" onChange={handleFotoChange} className="hidden" />
                   <svg className="w-5 h-5 drop-shadow-md text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 </label>
               </div>
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{user.nombre || 'Mi Refugio'}</h1>
               <p className="text-gray-500 font-medium mt-1">{user.email}</p>
-              <span className="inline-flex items-center gap-1 mt-3 px-3 py-1 rounded-full bg-blue-100/50 border border-blue-200 text-[#0B84FF] text-xs font-bold shadow-sm">
+              <span className="inline-flex items-center gap-1 mt-2.5 px-3 py-1 rounded-full bg-blue-100/0 text-[#94a6b8] text-sm font-semibold">
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v9a2 2 0 01-2 2h-4v-6H9v6H5a2 2 0 01-2-2v-9z"/></svg>
                 Cuenta de Refugio
               </span>
@@ -409,24 +611,39 @@ export default function RefugioDashboard() {
           <div className="space-y-8">
             
             {/* Action Buttons Top */}
-            <BlurFade delay={0.15} inView>
-              <div className="flex justify-center md:justify-end">
-                <Link to="/dashboard/add-pet" className="flex items-center gap-2 bg-[#0B84FF] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-[#0B84FF]/20 hover:bg-blue-600 transition hover:scale-105">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
-                  Nueva Mascota
-                </Link>
+            <BlurFade delay={0.12} inView={false}>
+              <div className="flex justify-center items-center">
+                <div className="relative group inline-flex items-center justify-center">
+                  {/* Aura brillante inferior animada estilo Rainbow */}
+                  <div className="absolute -bottom-2 left-1/2 h-4 w-3/4 -translate-x-1/2 animate-rainbow bg-[linear-gradient(90deg,hsl(var(--color-1)),hsl(var(--color-5)),hsl(var(--color-3)),hsl(var(--color-4)),hsl(var(--color-2)))] bg-[length:200%] blur-md opacity-70 group-hover:opacity-100 transition-opacity" />
+
+                  <Link
+                    to="/dashboard/add-pet"
+                    className="relative z-10 inline-flex h-12 animate-rainbow cursor-pointer items-center justify-center gap-2.5 rounded-full bg-[linear-gradient(#121213,#121213),linear-gradient(#121213_50%,rgba(18,18,19,0.6)_80%,rgba(18,18,19,0)),linear-gradient(90deg,hsl(var(--color-1)),hsl(var(--color-5)),hsl(var(--color-3)),hsl(var(--color-4)),hsl(var(--color-2)))] bg-[length:200%] px-7 py-2.5 text-sm font-semibold text-white transition-all duration-300 [background-clip:padding-box,border-box,border-box] [background-origin:border-box] [border:calc(0.08*1rem)_solid_transparent] hover:scale-[1.03] active:scale-95 shadow-2xl overflow-hidden"
+                  >
+                    {/* Haz de luz que recorre el botón al pasar el cursor */}
+                    <div className="absolute -inset-full top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/35 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-[350%] transition-transform duration-1000 ease-in-out pointer-events-none" />
+
+                    {/* Icono Plus con cápsula translúcida y rotación suave */}
+                    <span className="w-6 h-6 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-white transition-transform duration-300 group-hover:rotate-90 group-hover:bg-white group-hover:text-black shadow-inner">
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    </span>
+
+                    <span className="relative z-10 font-bold tracking-tight">Nueva Mascota</span>
+                  </Link>
+                </div>
               </div>
             </BlurFade>
 
             {/* ESTADÍSTICAS */}
-            <BlurFade delay={0.2} inView>
+            <BlurFade delay={0.18} inView={false}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div onClick={() => setFilterBy('TODOS')} className="cursor-pointer hover:scale-[1.02] transition-transform bg-blue-100/50 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-[0px_15px_35px_-10px_rgba(0,0,0,0.05),inset_0px_0px_15px_rgba(255,255,255,1)] flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-white/70 shadow-sm border border-white text-[#0B84FF] flex items-center justify-center">
                     <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                   </div>
                   <div>
-                    <p className="text-gray-600 text-sm font-semibold">En Adopción (Ver Todos)</p>
+                    <p className="text-gray-600 text-sm font-semibold">En Adopción</p>
                     <h3 className="text-3xl font-bold text-gray-900">{loadingStats ? '-' : stats.enAdopcion}</h3>
                   </div>
                 </div>
@@ -453,9 +670,13 @@ export default function RefugioDashboard() {
               </div>
             </BlurFade>
 
-            {/* SOLICITUDES ENTRANTES */}
-            <BlurFade delay={0.25} inView>
-              <div className="bg-gray-100/30 backdrop-blur-xl border border-white/60 rounded-3xl shadow-[0px_15px_35px_-10px_rgba(0,0,0,0.05),inset_0px_0px_15px_rgba(255,255,255,1)] overflow-hidden">
+            {/* SOLICITUDES ENTRANTES (Aparece únicamente cuando el usuario empieza a bajar/scrollear) */}
+            <motion.div
+              initial={{ opacity: 0, y: 35, filter: "blur(10px)" }}
+              animate={hasScrolled ? { opacity: 1, y: 0, filter: "blur(0px)" } : { opacity: 0, y: 35, filter: "blur(10px)" }}
+              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="bg-gray-100/30 backdrop-blur-xl border border-white/60 rounded-3xl shadow-[0px_15px_35px_-10px_rgba(0,0,0,0.05),inset_0px_0px_15px_rgba(255,255,255,1)] relative">
                 <div className="p-6 border-b border-white/50 flex items-center justify-between">
                   <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
                     <span className="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center">
@@ -467,31 +688,47 @@ export default function RefugioDashboard() {
                 </div>
                 
                 {filteredSolicitudes.length > 0 ? (
-                  <div className="overflow-x-auto p-2">
+                  <div className="p-2 overflow-x-auto md:overflow-visible">
                     <table className="w-full text-left border-separate border-spacing-y-2">
-                      <thead className="text-gray-500 text-xs uppercase px-4">
+                      <thead className="text-gray-500 text-xs px-4">
                         <tr>
                           <th className="px-6 py-3 font-semibold">Adoptante</th>
                           <th className="px-6 py-3 font-semibold">Mascota</th>
-                          <th className="px-6 py-3 font-semibold">Cita</th>
                           <th className="px-6 py-3 font-semibold text-center">Estado</th>
                           <th className="px-6 py-3 font-semibold text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredSolicitudes.map((sol: any) => (
-                          <tr key={sol.id} className="bg-white/40 hover:bg-white/70 transition rounded-2xl shadow-sm">
+                          <tr key={sol.id} className="bg-white/40 hover:bg-white/70 transition rounded-2xl shadow-sm relative">
                             <td className="px-6 py-4 rounded-l-2xl">
                               <span className="font-bold text-gray-900 block">{sol.usuarioNombre}</span>
                               <span className="text-xs text-gray-500">{sol.telefono}</span>
                             </td>
                             <td className="px-6 py-4">
-                                <span className="font-semibold text-[#0B84FF] block">{sol.mascotaNombre}</span>
-                                <span className="text-xs text-gray-500 capitalize">{sol.mascotaTipo?.toLowerCase()} • {sol.mascotaRaza}</span>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {/* Date information is now inside the message detail */}
-                              <span className="text-xs text-gray-500 italic">Ver detalles</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  if (activePetBubble?.id === `sol-${sol.id}`) {
+                                    setActivePetBubble(null);
+                                  } else {
+                                    openPetBubble({
+                                      id: `sol-${sol.id}`,
+                                      tipo: sol.mascotaTipo?.toLowerCase() || 'mascota',
+                                      raza: sol.mascotaRaza || 'Mestizo / Común',
+                                      x: rect.left,
+                                      y: rect.bottom + 8
+                                    });
+                                  }
+                                }}
+                                className="group inline-flex items-center gap-1.5 font-bold text-gray-900 hover:text-[#0B84FF] transition-colors cursor-pointer text-sm"
+                                title="Clic para ver detalles de la mascota"
+                              >
+                                <span>{sol.mascotaNombre}</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#0B84FF] transition-colors" />
+                              </button>
                             </td>
                             <td className="px-6 py-4 text-center">
                               <span className={`inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold ${sol.estado === 'APROBADA' ? 'bg-green-50 text-green-600 border-green-200' : sol.estado === 'RECHAZADA' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-yellow-50 text-yellow-600 border-yellow-200'}`}>
@@ -500,10 +737,20 @@ export default function RefugioDashboard() {
                               </span>
                             </td>
                             <td className="px-6 py-4 text-right rounded-r-2xl">
-                              <div className="flex justify-end gap-2">
-                                <button onClick={() => setSelectedSolicitud(sol)} className="px-4 py-2 rounded-xl bg-[#0B84FF] text-white text-xs font-bold hover:bg-blue-600 transition shadow-md">Revisar</button>
-                                <button onClick={() => deleteAdopcion(sol.id)} className="px-3 py-2 rounded-xl bg-red-50 text-red-500 text-xs font-bold hover:bg-red-100 border border-red-100 transition shadow-md" title="Eliminar del historial">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                              <div className="flex items-center justify-end gap-2.5">
+                                <button 
+                                  onClick={() => setSelectedSolicitud(sol)} 
+                                  className="group flex items-center justify-center w-8.5 h-8.5 rounded-full bg-[#0B84FF] hover:bg-blue-600 text-white shadow-xs hover:shadow-md hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+                                  title="Revisar solicitud"
+                                >
+                                  <AnimatedEyeIcon className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => deleteAdopcion(sol.id)} 
+                                  className="group flex items-center justify-center w-8.5 h-8.5 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-xs hover:shadow-md hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer" 
+                                  title="Eliminar del historial"
+                                >
+                                  <AnimatedTrashIcon className="w-4 h-4" />
                                 </button>
                               </div>
                             </td>
@@ -521,11 +768,11 @@ export default function RefugioDashboard() {
                   </div>
                 )}
               </div>
-            </BlurFade>
+            </motion.div>
 
             {/* CITAS PROGRAMADAS */}
-            <BlurFade delay={0.27} inView>
-              <div className="bg-gray-100/30 backdrop-blur-xl border border-white/60 rounded-3xl shadow-[0px_15px_35px_-10px_rgba(0,0,0,0.05),inset_0px_0px_15px_rgba(255,255,255,1)] overflow-hidden mt-6 mb-6">
+            <BlurFade delay={0.05} inView={true}>
+              <div className="bg-gray-100/30 backdrop-blur-xl border border-white/60 rounded-3xl shadow-[0px_15px_35px_-10px_rgba(0,0,0,0.05),inset_0px_0px_15px_rgba(255,255,255,1)] relative mt-6 mb-6">
                 <div className="p-6 border-b border-white/50 flex items-center justify-between">
                   <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
                     <span className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
@@ -537,9 +784,9 @@ export default function RefugioDashboard() {
                 </div>
                 
                 {citas.length > 0 ? (
-                  <div className="overflow-x-auto p-2">
+                  <div className="p-2 overflow-x-auto md:overflow-visible">
                     <table className="w-full text-left border-separate border-spacing-y-2">
-                      <thead className="text-gray-500 text-xs uppercase px-4">
+                      <thead className="text-gray-500 text-xs px-4">
                         <tr>
                           <th className="px-6 py-3 font-semibold">Fecha y Hora</th>
                           <th className="px-6 py-3 font-semibold">Solicitante</th>
@@ -550,7 +797,7 @@ export default function RefugioDashboard() {
                       </thead>
                       <tbody>
                         {citas.map((cita: any) => (
-                          <tr key={cita.id} className="bg-white/40 hover:bg-white/70 transition rounded-2xl shadow-sm">
+                          <tr key={cita.id} className="bg-white/40 hover:bg-white/70 transition rounded-2xl shadow-sm relative">
                             <td className="px-6 py-4 rounded-l-2xl font-medium text-gray-900">
                               {cita.fecha} a las {cita.hora}
                             </td>
@@ -558,7 +805,32 @@ export default function RefugioDashboard() {
                               <span className="font-bold text-gray-900 block">{cita.nombreSolicitante}</span>
                               <span className="text-xs text-gray-500">{cita.telefono}</span>
                             </td>
-                            <td className="px-6 py-4 font-semibold text-[#0B84FF]">{cita.mascotaNombre}</td>
+                            <td className="px-6 py-4">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  if (activePetBubble?.id === `cita-${cita.id}`) {
+                                    setActivePetBubble(null);
+                                  } else {
+                                    openPetBubble({
+                                      id: `cita-${cita.id}`,
+                                      tipo: `${cita.fecha} • ${cita.hora}`,
+                                      raza: cita.tipoVivienda || 'Vivienda estándar',
+                                      isCita: true,
+                                      x: rect.left,
+                                      y: rect.bottom + 8
+                                    });
+                                  }
+                                }}
+                                className="group inline-flex items-center gap-1.5 font-bold text-gray-900 hover:text-[#0B84FF] transition-colors cursor-pointer text-sm"
+                                title="Clic para ver detalles de la mascota"
+                              >
+                                <span>{cita.mascotaNombre}</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#0B84FF] transition-colors" />
+                              </button>
+                            </td>
                             <td className="px-6 py-4 text-center">
                               <span className={`inline-flex py-1 px-3 rounded-full text-xs font-bold ${cita.estado === 'aprobada' ? 'bg-green-50 text-green-600' : cita.estado === 'rechazada' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-600'}`}>
                                 {cita.estado}
@@ -592,7 +864,7 @@ export default function RefugioDashboard() {
             </BlurFade>
 
             {/* TABLA DE PUBLICACIONES */}
-            <BlurFade delay={0.3} inView>
+            <BlurFade delay={0.05} inView={true}>
               <div className="bg-gray-100/30 backdrop-blur-xl border border-white/60 rounded-3xl shadow-[0px_15px_35px_-10px_rgba(0,0,0,0.05),inset_0px_0px_15px_rgba(255,255,255,1)] overflow-hidden">
                 <div className="p-6 border-b border-white/50 flex items-center justify-between">
                   <h3 className="font-bold text-xl text-gray-900">Mis Publicaciones</h3>
@@ -603,7 +875,7 @@ export default function RefugioDashboard() {
                   <>
                     <div className="overflow-x-auto p-4 border-b border-gray-100">
                       <table className="w-full text-left border-separate border-spacing-y-2">
-                        <thead className="text-gray-500 text-xs uppercase px-4">
+                        <thead className="text-gray-500 text-xs px-4">
                           <tr>
                             <th className="px-6 py-3 font-semibold">Mascota</th>
                             <th className="px-6 py-3 font-semibold">Tipo</th>
@@ -621,28 +893,28 @@ export default function RefugioDashboard() {
                               <td className="px-6 py-4 text-sm text-gray-600 capitalize font-medium">{pet.categoria}</td>
                               
                               <td className="px-6 py-4 text-center">
-                                {pet.estado === 'ADOPTADO' ? (
-                                  <button className="inline-flex items-center gap-1.5 py-1.5 px-3.5 rounded-full text-xs font-bold bg-blue-50 text-[#0B84FF] border border-[#0B84FF]/20 cursor-not-allowed">
-                                    <span className="w-2 h-2 rounded-full bg-[#0B84FF]"></span>
-                                    Adoptado
-                                  </button>
-                                ) : pet.estado === 'DISPONIBLE' ? (
-                                  <button onClick={() => handleChangeStatus(pet.id, pet.estado)} className="inline-flex items-center gap-1.5 py-1.5 px-3.5 rounded-full text-xs font-bold bg-green-50 text-green-600 border border-green-100 hover:bg-green-100 transition cursor-pointer">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                                    Disponible
-                                  </button>
-                                ) : (
-                                  <button onClick={() => handleChangeStatus(pet.id, pet.estado)} className="inline-flex items-center gap-1.5 py-1.5 px-3.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200 transition cursor-pointer">
-                                    <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                                    No Disponible
-                                  </button>
-                                )}
+                                <PetStatusToggle
+                                  status={pet.estado}
+                                  onChangeStatus={(newStatus) => handleChangeStatus(pet.id, newStatus)}
+                                />
                               </td>
 
                               <td className="px-6 py-4 text-right rounded-r-2xl">
                                 <div className="flex items-center justify-end gap-2">
-                                  <button onClick={() => handleDeleteMascota(pet.id)} className="px-3 py-1.5 rounded-xl bg-red-50 text-red-500 text-xs font-bold hover:bg-red-100 border border-red-100 transition shadow-sm">Eliminar</button>
-                                  <Link to={`/dashboard/edit-pet/${pet.id}`} className="px-3 py-1.5 rounded-xl bg-white text-[#0B84FF] text-xs font-bold hover:bg-blue-50 border border-blue-100 transition shadow-sm">Editar</Link>
+                                  <Link 
+                                    to={`/dashboard/edit-pet/${pet.id}`} 
+                                    className="group flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-xs hover:shadow-md hover:scale-110 active:scale-95 transition-all duration-200"
+                                    title="Editar publicación"
+                                  >
+                                    <AnimatedPencilIcon className="w-3.5 h-3.5" />
+                                  </Link>
+                                  <button 
+                                    onClick={() => handleDeleteMascota(pet.id)} 
+                                    className="group flex items-center justify-center w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-xs hover:shadow-md hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer"
+                                    title="Eliminar publicación"
+                                  >
+                                    <AnimatedTrashIcon className="w-3.5 h-3.5" />
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -651,27 +923,98 @@ export default function RefugioDashboard() {
                       </table>
                     </div>
                     
-                    {/* Pagination Controls */}
+                    {/* Pagination Controls with Fish-eye Circular Numbers */}
                     {totalPages > 1 && (
-                      <div className="p-4 flex items-center justify-between bg-white/30 rounded-b-3xl">
-                        <span className="text-sm text-gray-600 font-medium">
-                          Página {page + 1} de {totalPages} ({totalMascotas} mascotas)
+                      <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/40 backdrop-blur-md rounded-b-3xl border-t border-white/60">
+                        <span className="text-xs sm:text-sm text-gray-600 font-semibold">
+                          Página <strong className="text-gray-900">{page + 1}</strong> de {totalPages} ({totalMascotas} mascotas)
                         </span>
-                        <div className="flex gap-2">
-                          <button 
+
+                        <div className="flex items-center gap-1.5">
+                          {/* Botón Anterior */}
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.92 }}
+                            type="button"
                             onClick={() => setPage(p => Math.max(0, p - 1))}
                             disabled={page === 0}
-                            className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white border border-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+                            className="px-3 py-1.5 rounded-full text-xs font-bold bg-white/90 border border-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-50 hover:text-[#0c8aff] hover:border-blue-200 transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                            title="Página anterior"
                           >
-                            Anterior
-                          </button>
-                          <button 
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Anterior</span>
+                          </motion.button>
+
+                          {/* Numeración Circular Dinámica (Efecto Ojo de Pez / Fish-eye) */}
+                          <div className="flex items-center gap-1.5 px-1">
+                            {(() => {
+                              const maxButtons = 7;
+                              let startPage = Math.max(0, page - 3);
+                              let endPage = Math.min(totalPages - 1, page + 3);
+
+                              if (endPage - startPage + 1 < maxButtons) {
+                                if (startPage === 0) {
+                                  endPage = Math.min(totalPages - 1, startPage + maxButtons - 1);
+                                } else if (endPage === totalPages - 1) {
+                                  startPage = Math.max(0, endPage - maxButtons + 1);
+                                }
+                              }
+
+                              const pagesArray = [];
+                              for (let i = startPage; i <= endPage; i++) {
+                                pagesArray.push(i);
+                              }
+
+                              return pagesArray.map((pIndex) => {
+                                const isCurrent = pIndex === page;
+                                const distance = Math.abs(pIndex - page);
+
+                                // Escala y opacidad calculadas exactamente según distancia
+                                const scale = isCurrent ? 1.15 : distance === 1 ? 0.94 : distance === 2 ? 0.80 : 0.66;
+                                const opacity = isCurrent ? 1 : distance === 1 ? 0.88 : distance === 2 ? 0.65 : 0.40;
+
+                                return (
+                                  <motion.button
+                                    key={`page-num-${pIndex}`}
+                                    type="button"
+                                    onClick={() => setPage(pIndex)}
+                                    initial={{ scale, opacity }}
+                                    animate={{ scale, opacity }}
+                                    whileHover={{ scale: isCurrent ? 1.18 : scale * 1.15, opacity: 1 }}
+                                    whileTap={{ scale: 0.88 }}
+                                    transition={{
+                                      type: 'spring',
+                                      stiffness: 480,
+                                      damping: 26,
+                                      mass: 0.7
+                                    }}
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-colors cursor-pointer shrink-0 ${
+                                      isCurrent
+                                        ? 'bg-white text-gray-900 border-2 border-gray-400 shadow-[0_4px_14px_rgba(0,0,0,0.1)] font-extrabold z-10'
+                                        : 'bg-white/80 text-gray-500 hover:bg-white hover:text-gray-900 border border-gray-200/90 font-bold shadow-2xs'
+                                    }`}
+                                    title={`Página ${pIndex + 1}`}
+                                  >
+                                    {pIndex + 1}
+                                  </motion.button>
+                                );
+                              });
+                            })()}
+                          </div>
+
+                          {/* Botón Siguiente */}
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.92 }}
+                            type="button"
                             onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                             disabled={page >= totalPages - 1}
-                            className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white border border-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+                            className="px-3 py-1.5 rounded-full text-xs font-bold bg-white/90 border border-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-50 hover:text-[#0B84FF] hover:border-blue-200 transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                            title="Página siguiente"
                           >
-                            Siguiente
-                          </button>
+                            <span className="hidden sm:inline">Siguiente</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </motion.button>
                         </div>
                       </div>
                     )}
@@ -681,18 +1024,27 @@ export default function RefugioDashboard() {
                   <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                   </div>
-                  <p className="text-gray-500 font-medium mb-4">Aún no has publicado mascotas</p>
-                  <Link to="/dashboard/add-pet" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B84FF] text-white rounded-xl text-sm font-bold shadow-md hover:bg-blue-600 transition">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
-                    Publicar primera mascota
-                  </Link>
+                  <div className="relative group inline-flex items-center justify-center">
+                    <div className="absolute -bottom-2 left-1/2 h-4 w-3/4 -translate-x-1/2 animate-rainbow bg-[linear-gradient(90deg,hsl(var(--color-1)),hsl(var(--color-5)),hsl(var(--color-3)),hsl(var(--color-4)),hsl(var(--color-2)))] bg-[length:200%] blur-md opacity-70 group-hover:opacity-100 transition-opacity" />
+                    <Link
+                      to="/dashboard/add-pet"
+                      className="relative z-10 inline-flex h-12 animate-rainbow cursor-pointer items-center justify-center gap-2.5 rounded-full bg-[linear-gradient(#121213,#121213),linear-gradient(#121213_50%,rgba(18,18,19,0.6)_80%,rgba(18,18,19,0)),linear-gradient(90deg,hsl(var(--color-1)),hsl(var(--color-5)),hsl(var(--color-3)),hsl(var(--color-4)),hsl(var(--color-2)))] bg-[length:200%] px-7 py-2.5 text-sm font-semibold text-white transition-all duration-300 [background-clip:padding-box,border-box,border-box] [background-origin:border-box] [border:calc(0.08*1rem)_solid_transparent] hover:scale-[1.03] active:scale-95 shadow-2xl overflow-hidden"
+                    >
+                      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                      <div className="absolute -inset-full top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/35 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-[350%] transition-transform duration-1000 ease-in-out pointer-events-none" />
+                      <span className="w-6 h-6 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center text-white transition-transform duration-300 group-hover:rotate-90 group-hover:bg-white group-hover:text-black shadow-inner">
+                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </span>
+                      <span className="relative z-10 font-bold tracking-tight">Publicar primera mascota</span>
+                    </Link>
+                  </div>
                 </div>
               )}
               </div>
             </BlurFade>
 
             {/* CONFIGURACIÓN */}
-            <BlurFade delay={0.4} inView>
+            <BlurFade delay={0.05} inView={true}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               <div className="bg-gray-100/30 backdrop-blur-xl border border-white/60 p-8 rounded-3xl shadow-[0px_15px_35px_-10px_rgba(0,0,0,0.05),inset_0px_0px_15px_rgba(255,255,255,1)]">
@@ -760,15 +1112,25 @@ export default function RefugioDashboard() {
       </div>
 
       {selectedSolicitud && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity"
+          onClick={() => setSelectedSolicitud(null)}
+        >
+          <div 
+            className="bg-white rounded-[2rem] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] relative animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Solicitud de Adopción</h3>
                 <p className="text-sm text-gray-500 font-medium">{selectedSolicitud.mascotaNombre} - {selectedSolicitud.usuarioNombre}</p>
               </div>
-              <button onClick={() => setSelectedSolicitud(null)} className="text-gray-400 hover:text-red-500 transition-colors bg-white rounded-full p-2 shadow-sm">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              <button 
+                onClick={() => setSelectedSolicitud(null)} 
+                className="text-gray-400 hover:text-gray-700 transition-colors bg-white hover:bg-gray-100 rounded-full p-2.5 shadow-sm border border-gray-100 cursor-pointer"
+                title="Cerrar modal (Esc)"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
             
@@ -895,13 +1257,21 @@ export default function RefugioDashboard() {
               </div>
             </div>
             
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-               {selectedSolicitud.estado !== 'RECHAZADA' && (
-                  <button onClick={() => handleResolveAdopcion(selectedSolicitud.id, 'RECHAZADA')} className="px-5 py-2 rounded-full text-red-600 font-bold hover:bg-red-50 transition-colors text-sm">Rechazar</button>
-               )}
-               {selectedSolicitud.estado !== 'APROBADA' && (
-                  <button onClick={() => handleResolveAdopcion(selectedSolicitud.id, 'APROBADA')} className="px-5 py-2 rounded-full bg-[#0B84FF] hover:bg-blue-600 text-white font-bold transition-colors shadow-md text-sm">Aprobar Adopción</button>
-               )}
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <button 
+                onClick={() => setSelectedSolicitud(null)} 
+                className="px-5 py-2 rounded-full bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 font-bold transition-colors text-sm cursor-pointer shadow-xs"
+              >
+                Cerrar
+              </button>
+              <div className="flex gap-2">
+                {selectedSolicitud.estado !== 'RECHAZADA' && (
+                  <button onClick={() => handleResolveAdopcion(selectedSolicitud.id, 'RECHAZADA')} className="px-5 py-2 rounded-full text-red-600 font-bold hover:bg-red-50 transition-colors text-sm cursor-pointer">Rechazar</button>
+                )}
+                {selectedSolicitud.estado !== 'APROBADA' && (
+                  <button onClick={() => handleResolveAdopcion(selectedSolicitud.id, 'APROBADA')} className="px-5 py-2 rounded-full bg-[#0B84FF] hover:bg-blue-600 text-white font-bold transition-colors shadow-md text-sm cursor-pointer">Aprobar Adopción</button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -930,6 +1300,68 @@ export default function RefugioDashboard() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* PORTAL DE BURBUJA FLOTANTE LIQUID GLASS */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {activePetBubble && (
+            <>
+              <div 
+                className="fixed inset-0 z-[9998]" 
+                onClick={() => setActivePetBubble(null)} 
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 4 }}
+                transition={{ 
+                  type: "spring",
+                  stiffness: 420,
+                  damping: 24,
+                  mass: 0.75
+                }}
+                style={{
+                  position: 'fixed',
+                  top: activePetBubble.y,
+                  left: activePetBubble.x,
+                  backdropFilter: `blur(${GLASS_CONFIG.blurLevel}) saturate(${GLASS_CONFIG.saturate})`,
+                  WebkitBackdropFilter: `blur(${GLASS_CONFIG.blurLevel}) saturate(${GLASS_CONFIG.saturate})`,
+                  background: `linear-gradient(135deg, rgba(255, 255, 255, ${GLASS_CONFIG.opacityMax}) 0%, rgba(255, 255, 255, ${GLASS_CONFIG.opacityMin}) 100%)`,
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.22), 0 0 25px rgba(255, 255, 255, 0.5), inset 0 1px 2px rgba(255, 255, 255, 1)'
+                }}
+                className="w-64 border border-white/80 rounded-2xl p-2.5 z-[9999] pointer-events-auto space-y-1.5 overflow-hidden"
+              >
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none" />
+                <div 
+                  style={{
+                    backdropFilter: `blur(${GLASS_CONFIG.innerBlurLevel})`,
+                    WebkitBackdropFilter: `blur(${GLASS_CONFIG.innerBlurLevel})`,
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.9)'
+                  }}
+                  className="flex items-center justify-between py-2 px-3 rounded-xl border border-white/70 text-xs"
+                >
+                  <span className="text-gray-600 font-medium">{activePetBubble.isCita ? 'Fecha y hora' : 'Especie / Tipo'}</span>
+                  <span className="font-bold text-gray-950 capitalize">{activePetBubble.tipo}</span>
+                </div>
+                <div 
+                  style={{
+                    backdropFilter: `blur(${GLASS_CONFIG.innerBlurLevel})`,
+                    WebkitBackdropFilter: `blur(${GLASS_CONFIG.innerBlurLevel})`,
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.9)'
+                  }}
+                  className="flex items-center justify-between py-2 px-3 rounded-xl border border-white/70 text-xs"
+                >
+                  <span className="text-gray-600 font-medium">{activePetBubble.isCita ? 'Vivienda' : 'Raza'}</span>
+                  <span className="font-bold text-gray-950">{activePetBubble.raza}</span>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
     </div>
   );

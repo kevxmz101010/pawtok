@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin, Home, Syringe, Bug, Calendar, FileText, Check, Plus, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, MapPin, Home, Syringe, Bug, Calendar, FileText, Check, Plus, X, Trash2 } from 'lucide-react';
 import Notification from '../components/Notification';
 import { ToastMessage, MascotaDTO } from '../types';
 import { RainbowButton } from '../components/ui/rainbow-button';
 import { BlurFade } from '../components/ui/blur-fade';
 import { Carousel, CarouselIndicator } from '../components/ui/simple-carousel';
+import { DatePicker } from '../components/ui/date-picker';
+import { AnimatedCheckbox } from '../components/ui/animated-checkbox';
 import Autoplay from 'embla-carousel-autoplay';
 import { useAuth } from '../context/AuthContext';
 
@@ -25,6 +28,26 @@ export default function PetDetails() {
   const [newVacuna, setNewVacuna] = useState(false);
   const [newDesparasitacion, setNewDesparasitacion] = useState(false);
   const [isSubmittingHistorial, setIsSubmittingHistorial] = useState(false);
+
+  const handleDeleteHistorial = async (historialId: number) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este registro médico?')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/mascotas/${id}/historial/${historialId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        handleShowToast('Registro médico eliminado con éxito', 'success');
+        setHistorial(prev => prev.filter(item => item.id !== historialId));
+      } else {
+        handleShowToast('Error al eliminar el registro médico', 'error');
+      }
+    } catch (err) {
+      handleShowToast('Error de conexión', 'error');
+    }
+  };
 
   const handleShowToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const nextToast: ToastMessage = {
@@ -105,7 +128,27 @@ export default function PetDetails() {
   const placeholders = isCat ? catPlaceholders : dogPlaceholders;
   const fallbackImg = placeholders[pet.id % placeholders.length];
 
-  const fotoUrl = (pet.imagenUrl && pet.imagenUrl.trim() !== '') ? (pet.imagenUrl.startsWith('http') ? pet.imagenUrl : `http://localhost:8080/uploads/${pet.imagenUrl}`) : fallbackImg;
+  // Colección estricta de fotos reales subidas para esta mascota
+  const allImages: string[] = [];
+  if (pet.imagenUrl && pet.imagenUrl.trim() !== '') {
+    const mainImg = pet.imagenUrl.startsWith('http') ? pet.imagenUrl : `http://localhost:8080/uploads/${pet.imagenUrl}`;
+    allImages.push(mainImg);
+  }
+  if (pet.galeria && Array.isArray(pet.galeria)) {
+    pet.galeria.forEach((img) => {
+      if (img && img.trim() !== '') {
+        const gUrl = img.startsWith('http') ? img : `http://localhost:8080/uploads/${img}`;
+        if (!allImages.includes(gUrl)) {
+          allImages.push(gUrl);
+        }
+      }
+    });
+  }
+  if (allImages.length === 0) {
+    allImages.push(fallbackImg);
+  }
+
+  const fotoUrl = allImages[0];
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 overflow-hidden relative">
@@ -124,7 +167,7 @@ export default function PetDetails() {
         
         {/* APP ICON (Pet Profile) */}
         <BlurFade delay={0.1} inView>
-          <div className="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-[32px] overflow-hidden shadow-[0_12px_24px_rgba(0,0,0,0.12)] border border-gray-100">
+          <div className="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-[32px] overflow-hidden shadow-[0_12px_24px_rgba(0,0,0,0.12)] border border-gray-100 bg-white">
             <img src={fotoUrl} alt={pet.nombre} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
           </div>
           <p className="text-center mt-3 text-sm font-semibold text-gray-500">{(pet as any).refugioNombre || `Refugio #${pet.idRefugio || 'Pawtok'}`}</p>
@@ -182,135 +225,95 @@ export default function PetDetails() {
           </div>
         </BlurFade>
 
-        {/* ACTION BUTTON */}
-        <BlurFade delay={0.3} inView>
-            <div className="mt-10 flex justify-center">
-            <RainbowButton 
-                onClick={() => navigate(`/adoptar/${id}`)}
-                className="px-8 py-3.5 h-auto text-base font-bold shadow-lg"
-              >
-                Empezar Adopción
-            </RainbowButton>
-            </div>
-        </BlurFade>
-
-        {/* MAP & SHELTER BOX */}
-        <BlurFade delay={0.35} inView className="w-full mt-16 max-w-2xl mx-auto px-6">
-          <div className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
-            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Ubicación del Refugio</h3>
-                <p className="text-sm text-gray-500 mt-1">{pet.ubicacion || 'Bogotá, Colombia'}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-[#0B84FF]">
-                <MapPin className="w-6 h-6" />
-              </div>
-            </div>
-            <div className="h-72 relative bg-gray-100">
-              <iframe
-                src={`https://www.google.com/maps?q=${encodeURIComponent(pet.ubicacion || 'Bogotá, Colombia')}&output=embed`}
-                className="w-full h-full absolute inset-0"
-                style={{ border: 0 }}
-                allowFullScreen={false}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              ></iframe>
-            </div>
-          </div>
-        </BlurFade>
-
-        {/* SHADCN STYLE CAROUSEL - Show uploaded gallery or placeholders */}
-        {pet.galeria && pet.galeria.length > 0 && (
-          <BlurFade delay={0.4} inView className="w-full mt-4 mb-10 overflow-hidden flex flex-col items-center">
-            <div className="text-center mb-8">
-            </div>
-          
+        {/* 1. GALERÍA DE FOTOS */}
+        <BlurFade delay={0.3} inView className="w-full mt-10 mb-10 overflow-hidden flex flex-col items-center">
           <div className="mx-auto max-w-md md:max-w-lg w-full relative px-6 md:px-12">
-            <Carousel.Root 
-              opts={{ loop: false, align: 'center' }} 
-              setApi={(api) => {
-              if (!api) return;
-              api.on("select", () => {
-                window.dispatchEvent(new CustomEvent('carousel-select', { detail: api.selectedScrollSnap() + 1 }));
-              });
-              setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('carousel-init', { detail: api.scrollSnapList().length }));
-              }, 100);
-            }} className="w-full">
-              <Carousel.Content>
-                {pet.galeria && pet.galeria.length > 0 ? (
-                  pet.galeria.map((imgName, idx) => {
-                    const imgUrl = (imgName.startsWith('http') ? imgName : `http://localhost:8080/uploads/${imgName}`);
-                    return (
-                      <Carousel.Item key={idx} className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl">
-                          <img alt={`Mascota ${idx}`} src={imgUrl} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
-                        </div>
-                      </Carousel.Item>
-                    );
-                  })
-                ) : (
-                  <>
-                      <Carousel.Item className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl">
-                          <img alt="Mascota" src={fotoUrl} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" onError={(e) => { e.currentTarget.src = fallbackImg; }} />
-                        </div>
-                      </Carousel.Item>
-                      <Carousel.Item className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl">
-                          <img alt="Imagen 2" src="https://images.unsplash.com/photo-1544568100-847a948585b9?q=80&w=800" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-                        </div>
-                      </Carousel.Item>
-                      <Carousel.Item className="basis-full">
-                        <div className="overflow-hidden aspect-square rounded-3xl">
-                          <img alt="Imagen 3" src="https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=800" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-                        </div>
-                      </Carousel.Item>
-                  </>
-                )}
-              </Carousel.Content>
+            {allImages.length === 1 ? (
+              // Vista de foto única limpia
+              <div className="overflow-hidden aspect-square rounded-3xl shadow-sm border border-gray-100 bg-white">
+                <img 
+                  alt={pet.nombre} 
+                  src={allImages[0]} 
+                  className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
+                  onError={(e) => { e.currentTarget.src = fallbackImg; }} 
+                />
+              </div>
+            ) : (
+              // Carrusel interactivo para múltiples fotos
+              <Carousel.Root 
+                opts={{ loop: false, align: 'center' }} 
+                setApi={(api) => {
+                  if (!api) return;
+                  api.on("select", () => {
+                    window.dispatchEvent(new CustomEvent('carousel-select', { detail: api.selectedScrollSnap() + 1 }));
+                  });
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('carousel-init', { detail: api.scrollSnapList().length }));
+                  }, 100);
+                }} 
+                className="w-full"
+              >
+                <Carousel.Content>
+                  {allImages.map((imgUrl, idx) => (
+                    <Carousel.Item key={idx} className="basis-full">
+                      <div className="overflow-hidden aspect-square rounded-3xl shadow-sm border border-gray-100 bg-white">
+                        <img 
+                          alt={`${pet.nombre} ${idx + 1}`} 
+                          src={imgUrl} 
+                          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
+                          onError={(e) => { e.currentTarget.src = fallbackImg; }} 
+                        />
+                      </div>
+                    </Carousel.Item>
+                  ))}
+                </Carousel.Content>
 
-              <Carousel.PrevTrigger className="absolute top-1/2 -left-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50">
+                <Carousel.PrevTrigger className="absolute top-1/2 -left-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50">
                   <ChevronLeft className="w-5 h-5" />
-              </Carousel.PrevTrigger>
-              <Carousel.NextTrigger className="absolute top-1/2 -right-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50">
+                </Carousel.PrevTrigger>
+                <Carousel.NextTrigger className="absolute top-1/2 -right-12 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50">
                   <ChevronRight className="w-5 h-5" />
-              </Carousel.NextTrigger>
-            </Carousel.Root>
-            
-            {/* Custom Slide Counter */}
-            <SlideCounter />
+                </Carousel.NextTrigger>
+
+                <SlideCounter totalCount={allImages.length} />
+              </Carousel.Root>
+            )}
           </div>
+        </BlurFade>
 
-          </BlurFade>
-        )}
-
-        {/* HISTORIAL MÉDICO */}
-        <BlurFade delay={0.45} inView className="w-full mt-4 mb-10 max-w-2xl mx-auto px-6">
-          <div className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
+        {/* 2. HISTORIAL MÉDICO */}
+        <BlurFade delay={0.35} inView className="w-full mt-1 mb-10 max-w-2xl mx-auto px-6">
+          <div className="bg-white rounded-[2.5rem] overflow-hidden flex flex-col">
             <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Historial Médico</h3>
                 <p className="text-sm text-gray-500 mt-1">Registro de vacunas y tratamientos</p>
               </div>
               <div className="flex items-center gap-3">
-                {user && (
-                  <button
+                {user && (user.rol === 'REFUGIO' || user.rol === 'ADMIN') && (
+                  <motion.button
+                    whileHover="hover"
+                    whileTap={{ scale: 0.94 }}
                     onClick={() => setShowAddForm(!showAddForm)}
-                    className="px-4 py-2 bg-blue-50 text-blue-600 font-bold rounded-xl hover:bg-blue-100 transition text-sm flex items-center gap-1.5"
+                    className="px-4 py-2 bg-[#abd5ff] hover:bg-[#97cbff] text-blue-900 font-bold rounded-full shadow-inner shadow-white/80 transition-colors text-sm flex items-center gap-1.5 cursor-pointer"
                   >
-                    {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                    {showAddForm ? 'Cancelar' : 'Agregar Registro'}
-                  </button>
+                    <motion.span
+                      variants={{
+                        hover: { rotate: 180, scale: 1.15 }
+                      }}
+                      transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                      className="inline-flex items-center justify-center"
+                    >
+                      {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4 stroke-[2.5]" />}
+                    </motion.span>
+                    <span>{showAddForm ? 'Cancelar' : 'Agregar Registro'}</span>
+                  </motion.button>
                 )}
-                <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-500">
-                  <FileText className="w-6 h-6" />
-                </div>
               </div>
             </div>
 
-            {/* FORMULARIO AGREGAR REGISTRO MÉDICO */}
-            {showAddForm && (
+            {/* FORMULARIO AGREGAR REGISTRO MÉDICO (SOLO REFUGIO / ADMIN) */}
+            {showAddForm && (user?.rol === 'REFUGIO' || user?.rol === 'ADMIN') && (
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
@@ -348,33 +351,25 @@ export default function PetDetails() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
                     <label className="text-xs font-bold text-gray-500 block mb-1">Fecha</label>
-                    <input
-                      type="date"
+                    <DatePicker
                       value={newFecha}
-                      onChange={(e) => setNewFecha(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      required
+                      onChange={setNewFecha}
+                      placeholder="Seleccionar fecha"
                     />
                   </div>
-                  <div className="flex items-center gap-4 pt-5">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newVacuna}
-                        onChange={(e) => setNewVacuna(e.target.checked)}
-                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>Vacuna</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newDesparasitacion}
-                        onChange={(e) => setNewDesparasitacion(e.target.checked)}
-                        className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
-                      />
-                      <span>Desparasitación</span>
-                    </label>
+                  <div className="flex flex-wrap items-center gap-3 pt-5">
+                    <AnimatedCheckbox 
+                      checked={newVacuna} 
+                      onChange={setNewVacuna} 
+                      label="Vacuna"
+                      activeColor="blue"
+                    />
+                    <AnimatedCheckbox 
+                      checked={newDesparasitacion} 
+                      onChange={setNewDesparasitacion} 
+                      label="Desparasitación"
+                      activeColor="purple"
+                    />
                   </div>
                 </div>
 
@@ -408,9 +403,19 @@ export default function PetDetails() {
                       <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-blue-50 text-blue-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
                         <Calendar className="w-4 h-4" />
                       </div>
-                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl border border-gray-100 bg-white shadow-xl/2 transition hover:bg-[#f3f3f3f6]">
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl border border-gray-100 bg-white shadow-xl/2 transition hover:bg-[#f3f3f3f6] group/card">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-bold text-gray-900 text-sm">{new Date(reg.fecha).toLocaleDateString()}</span>
+                          {user && (user.rol === 'REFUGIO' || user.rol === 'ADMIN') && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteHistorial(reg.id)}
+                              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition opacity-0 group-hover/card:opacity-100 cursor-pointer"
+                              title="Eliminar registro"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                         <p className="text-sm text-gray-600 mb-3">{reg.descripcion}</p>
                         <div className="flex flex-wrap gap-2">
@@ -441,6 +446,41 @@ export default function PetDetails() {
           </div>
         </BlurFade>
 
+        {/* 3. MAPA Y UBICACIÓN DEL REFUGIO */}
+        <BlurFade delay={0.4} inView className="w-full mt-4 mb-10 max-w-2xl mx-auto px-6">
+          <div className="bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
+            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Ubicación del Refugio</h3>
+                <p className="text-sm text-gray-500 mt-1">{pet.ubicacion || 'Bogotá, Colombia'}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-[#0B84FF]">
+                <MapPin className="w-6 h-6" />
+              </div>
+            </div>
+            <div className="h-72 relative bg-gray-100">
+              <iframe
+                src={`https://www.google.com/maps?q=${encodeURIComponent(pet.ubicacion || 'Bogotá, Colombia')}&output=embed`}
+                className="w-full h-full absolute inset-0"
+                style={{ border: 0 }}
+                allowFullScreen={false}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>
+          </div>
+        </BlurFade>
+
+        {/* 4. BOTÓN DE EMPEZAR ADOPCIÓN */}
+        <BlurFade delay={0.45} inView className="mt-8 mb-12 flex justify-center">
+          <RainbowButton 
+            onClick={() => navigate(`/adoptar/${id}`)}
+            className="px-10 py-4 h-auto text-lg font-bold shadow-xl hover:scale-105 transition-transform"
+          >
+            Empezar Adopción
+          </RainbowButton>
+        </BlurFade>
+
       </main>
 
       <Notification toasts={toasts} onDismiss={(tId) => setToasts(prev => prev.filter(t => t.id !== tId))} />
@@ -448,13 +488,14 @@ export default function PetDetails() {
   );
 }
 
-function SlideCounter() {
+function SlideCounter({ totalCount = 1 }: { totalCount?: number }) {
   const [current, setCurrent] = useState(1);
-  const [count, setCount] = useState(3);
+  const [count, setCount] = useState(totalCount);
 
   useEffect(() => {
+    setCount(totalCount);
     const onSelect = (e: any) => setCurrent(e.detail);
-    const onInit = (e: any) => setCount(e.detail);
+    const onInit = (e: any) => setCount(e.detail || totalCount);
     
     window.addEventListener('carousel-select', onSelect);
     window.addEventListener('carousel-init', onInit);
@@ -463,11 +504,13 @@ function SlideCounter() {
       window.removeEventListener('carousel-select', onSelect);
       window.removeEventListener('carousel-init', onInit);
     };
-  }, []);
+  }, [totalCount]);
+
+  if (count <= 1) return null;
 
   return (
-    <div className="py-4 text-center text-sm text-gray-500 font-medium">
-      Slide {current} of {count}
+    <div className="py-3 text-center text-xs font-bold text-gray-400 select-none">
+      Foto {current} de {count}
     </div>
   );
 }

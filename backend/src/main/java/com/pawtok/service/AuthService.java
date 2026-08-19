@@ -43,6 +43,7 @@ public class AuthService {
         Usuario usuario = Usuario.builder()
                 .nombre(registroDto.getNombre())
                 .email(registroDto.getEmail())
+                .telefono(registroDto.getTelefono())
                 .contrasena(passwordEncoder.encode(registroDto.getContrasena()))
                 .rol(registroDto.getRol() != null ? registroDto.getRol() : com.pawtok.model.enums.Rol.USUARIO)
                 .build();

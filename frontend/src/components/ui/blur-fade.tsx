@@ -1,15 +1,11 @@
 "use client";
 
-import { useRef } from "react";
-import { AnimatePresence, motion, useInView, Variants } from "motion/react";
+import { motion, Variants } from "framer-motion";
 
 interface BlurFadeProps {
   children: React.ReactNode;
   className?: string;
-  variant?: {
-    hidden: { y: number };
-    visible: { y: number };
-  };
+  variant?: Variants;
   duration?: number;
   delay?: number;
   yOffset?: number;
@@ -22,38 +18,51 @@ export function BlurFade({
   children,
   className,
   variant,
-  duration = 0.4,
+  duration = 0.65,
   delay = 0,
-  yOffset = 6,
+  yOffset = 36,
   inView = false,
   inViewMargin = "-50px",
-  blur = "6px",
+  blur = "12px",
 }: BlurFadeProps) {
-  const ref = useRef(null);
-  const inViewResult = useInView(ref, { once: true, margin: inViewMargin as any });
-  const isInView = !inView || inViewResult;
   const defaultVariants: Variants = {
     hidden: { y: yOffset, opacity: 0, filter: `blur(${blur})` },
-    visible: { y: 0, opacity: 1, filter: `blur(0px)` },
+    visible: { 
+      y: 0, 
+      opacity: 1, 
+      filter: "blur(0px)",
+      transition: {
+        delay,
+        duration,
+        ease: [0.16, 1, 0.3, 1],
+      }
+    },
   };
   const combinedVariants = variant || defaultVariants;
-  return (
-    <AnimatePresence>
+
+  if (inView) {
+    return (
       <motion.div
-        ref={ref}
         initial="hidden"
-        animate={isInView ? "visible" : "hidden"}
-        exit="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: inViewMargin as any, amount: 0.15 }}
         variants={combinedVariants}
-        transition={{
-          delay: 0.04 + delay,
-          duration,
-          ease: "easeOut",
-        }}
         className={className}
       >
         {children}
       </motion.div>
-    </AnimatePresence>
+    );
+  }
+
+  return (
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={combinedVariants}
+      className={className}
+    >
+      {children}
+    </motion.div>
   );
 }
+

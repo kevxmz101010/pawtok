@@ -23,7 +23,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UsuarioDTO | null>(() => {
     // Initialize from localStorage for instant render
     const saved = localStorage.getItem('pawtok_user');
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.rol === 'ADMIN' && (!parsed.nombre || parsed.nombre.toLowerCase() === 'admin' || parsed.nombre.toLowerCase() === 'administrador')) {
+        parsed.nombre = 'kj';
+      }
+      return parsed;
+    }
+    return null;
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -46,6 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/auth/me', { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
+        if (data && data.rol === 'ADMIN' && (!data.nombre || data.nombre.toLowerCase() === 'admin' || data.nombre.toLowerCase() === 'administrador')) {
+          data.nombre = 'kj';
+        }
         // HACK: Para evitar el problema de caché de sesión del backend (que devuelve datos viejos),
         // solo actualizamos el estado si no teníamos datos previos, o si es un inicio de sesión nuevo.
         setUser((prev) => {
@@ -92,6 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const userData = await response.json();
+    if (userData && userData.rol === 'ADMIN' && (!userData.nombre || userData.nombre.toLowerCase() === 'admin' || userData.nombre.toLowerCase() === 'administrador')) {
+      userData.nombre = 'kj';
+    }
     setUser(userData);
   };
 

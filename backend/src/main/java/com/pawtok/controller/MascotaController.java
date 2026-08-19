@@ -60,12 +60,24 @@ public class MascotaController {
     }
     
     /**
-     * Cambiar el estado de una mascota (ej. de DISPONIBLE a ADOPTADA).
+     * Cambiar el estado de una mascota (ej. de DISPONIBLE a ADOPTADO o INHABILITADO).
      */
     @PutMapping("/{id}/estado")
     public ResponseEntity<MascotaDTO> updateEstadoMascota(@PathVariable Long id, @RequestParam String estado, Authentication authentication) {
-        EstadoMascota estadoEnum = EstadoMascota.valueOf(estado);
-        return ResponseEntity.ok(mascotaService.updateEstado(id, estadoEnum, authentication.getName()));
+        String clean = estado != null ? estado.trim().toUpperCase() : "DISPONIBLE";
+        EstadoMascota estadoEnum;
+        try {
+            estadoEnum = EstadoMascota.valueOf(clean);
+        } catch (Exception e) {
+            if (clean.contains("INHABILITADO") || clean.contains("NO DISPONIBLE")) {
+                estadoEnum = EstadoMascota.INHABILITADO;
+            } else if (clean.contains("ADOPTADO")) {
+                estadoEnum = EstadoMascota.ADOPTADO;
+            } else {
+                estadoEnum = EstadoMascota.DISPONIBLE;
+            }
+        }
+        return ResponseEntity.ok(mascotaService.updateEstado(id, estadoEnum, authentication != null ? authentication.getName() : null));
     }
 
     /**

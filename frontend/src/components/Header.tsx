@@ -54,6 +54,26 @@ export default function Header({
     }
   };
 
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [user?.foto]);
+
+  const displayName = user
+    ? (user.rol === 'ADMIN'
+        ? (user.nombre && user.nombre.toLowerCase() !== 'admin' && user.nombre.toLowerCase() !== 'administrador' ? user.nombre : 'kj')
+        : user.nombre)
+    : '';
+
+  const getProfileImage = () => {
+    if (imgError || !user?.foto) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || 'Usuario')}&background=0B84FF&color=fff&bold=true`;
+    }
+    if (user.foto.startsWith('http')) return user.foto;
+    return `http://localhost:8080/uploads/${user.foto.split('/').pop()}`;
+  };
+
   return (
     <>
       <header className="fixed top-0 z-50 w-full h-[76px] flex items-start justify-center pointer-events-none">
@@ -132,12 +152,25 @@ export default function Header({
                   </Link>
                 )}
 
-                {/* Saludo personalizado que te lleva a tu perfil */}
+                {/* Saludo personalizado con avatar sobresaliendo entre el interior y el exterior */}
                 <Link 
                   to={user.rol === 'REFUGIO' ? '/refugio' : user.rol === 'ADMIN' ? '/admin' : '/cuenta'} 
-                  className="text-xs font-medium text-gray-700 hover:text-[#0B84FF] bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200/60 shadow-sm transition-colors cursor-pointer"
+                  className="group relative inline-flex items-center pl-8 pr-3.5 py-1.5 ml-3 bg-white/90 hover:bg-white text-gray-700 hover:text-[#0B84FF] rounded-full border border-gray-200/80 hover:border-blue-300 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                  title="Ir a mi perfil"
                 >
-                  Hola, {user.nombre}
+                  {/* Foto de perfil sobresaliendo mitad dentro y mitad fuera */}
+                  <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full ring-2 ring-white shadow-md overflow-hidden bg-gray-100 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 group-hover:rotate-9">
+                    <img 
+                      src={getProfileImage()} 
+                      alt={displayName} 
+                      className="w-full h-full object-cover"
+                      onError={() => setImgError(true)}
+                    />
+                  </div>
+
+                  <span className="text-xs font-semibold tracking-tight whitespace-nowrap">
+                    Hola, <span className="text-gray-900 group-hover:text-[#012f73] transition-colors">{displayName}</span>
+                  </span>
                 </Link>
 
                 <button
@@ -156,7 +189,7 @@ export default function Header({
                 </Link>
                 <Link
                   to="/register"
-                  className="relative bg-[#0B84FF] text-white hover:bg-[#157def] active:scale-95 px-5 py-2 md:px-6 md:py-2.5 rounded-full text-xs md:text-sm font-medium transition-all cursor-pointer shadow-[inset_0px_2px_7px_#81c5ff,inset_0px_-3px_11px_#0048a8,0px_8px_15px_rgba(11,132,255,0.3)] hover:shadow-[inset_0px_2px_4px_#81c5ff,inset_0px_-3px_4px_#0053c2,0px_12px_20px_rgba(11,132,255,0.4)] inline-flex items-center justify-center"
+                  className="relative bg-[#0B84FF] text-white hover:bg-[#157def] active:scale-95 px-5 py-2 md:px-6 md:py-2.5 rounded-full text-xs md:text-sm font-medium transition-all cursor-pointer shadow-[inset_0px_2px_7px_#81c5ff,inset_0px_-3px_11px_#0048a8] hover:shadow-[inset_0px_2px_4px_#81c5ff,inset_0px_-3px_4px_#0053c2] inline-flex items-center justify-center"
                 >
                   <div className="absolute inset-x-0 h-[2px] w-1/2 mx-auto -top-px shadow-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
                   <span className="relative z-20">Registrarse</span>

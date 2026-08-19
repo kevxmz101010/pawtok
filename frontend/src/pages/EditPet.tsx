@@ -1,13 +1,16 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BlurFade } from '../components/ui/blur-fade';
-import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon } from 'lucide-react';
+import { ChevronLeft, ImagePlus, UploadCloud, X, Crop as CropIcon, AlertCircle, Lock, ShieldCheck, FileText, Plus, CheckCircle2, Syringe, Bug, Pencil, Trash2, Check } from 'lucide-react';
 import Header from '../components/Header';
 import FullscreenToast from '../components/FullscreenToast';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
 import { RainbowButton } from '../components/ui/rainbow-button';
 import { HeadlessListbox } from '../components/ui/headless-listbox';
+import { DatePicker } from '../components/ui/date-picker';
+import { AnimatedCheckbox } from '../components/ui/animated-checkbox';
 import { useAuth } from '../context/AuthContext';
 
 const PERSONALITY_OPTIONS = [
@@ -21,19 +24,158 @@ const PERSONALITY_OPTIONS = [
 export default function EditPet() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [error, setError] = useState('');
+  const [historial, setHistorial] = useState<any[]>([]);
+
+  // Medical Record Addition State for Shelter
+  const [showAddMedForm, setShowAddMedForm] = useState(false);
+  const [newMedFecha, setNewMedFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [newMedDesc, setNewMedDesc] = useState('');
+  const [newMedVacuna, setNewMedVacuna] = useState(false);
+  const [newMedDesparasitacion, setNewMedDesparasitacion] = useState(false);
+  const [isSubmittingMed, setIsSubmittingMed] = useState(false);
+
+  // Medical Record Edition State for Shelter
+  const [editingMedId, setEditingMedId] = useState<number | null>(null);
+  const [editMedFecha, setEditMedFecha] = useState('');
+  const [editMedDesc, setEditMedDesc] = useState('');
+  const [editMedVacuna, setEditMedVacuna] = useState(false);
+  const [editMedDesparasitacion, setEditMedDesparasitacion] = useState(false);
+  const [isSubmittingEditMed, setIsSubmittingEditMed] = useState(false);
+
+  const handleStartEditMed = (reg: any) => {
+    setEditingMedId(reg.id);
+    setEditMedFecha(reg.fecha ? reg.fecha.split('T')[0] : new Date().toISOString().split('T')[0]);
+    setEditMedDesc(reg.descripcion || '');
+    setEditMedVacuna(Boolean(reg.vacuna));
+    setEditMedDesparasitacion(Boolean(reg.desparasitacion));
+  };
+
+  const handleCancelEditMed = () => {
+    setEditingMedId(null);
+  };
+
+  const handleSaveEditMedRecord = async (medId: number) => {
+    if (!editMedDesc.trim()) {
+      showToast('Por favor, ingresa una descripción para el tratamiento o vacuna.', 'error');
+      return;
+    }
+    setIsSubmittingEditMed(true);
+    try {
+      const res = await fetch(`/api/mascotas/${id}/historial/${medId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          fecha: editMedFecha,
+          descripcion: editMedDesc.trim(),
+          vacuna: editMedVacuna,
+          desparasitacion: editMedDesparasitacion
+        })
+      });
+      if (res.ok) {
+        showToast('¡Registro médico actualizado con éxito!', 'success');
+        setEditingMedId(null);
+        const resH = await fetch(`/api/mascotas/${id}/historial`);
+        if (resH.ok) {
+          setHistorial(await resH.json());
+        }
+      } else {
+        showToast('Ocurrió un error al actualizar el registro médico.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error de conexión con el servidor.', 'error');
+    } finally {
+      setIsSubmittingEditMed(false);
+    }
+  };
+
+  const handleDeleteMedRecord = async (medId: number) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este registro médico?')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/mascotas/${id}/historial/${medId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        showToast('Registro médico eliminado con éxito.', 'success');
+        setHistorial(prev => prev.filter(item => item.id !== medId));
+      } else {
+        showToast('Error al eliminar el registro médico.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error de conexión.', 'error');
+    }
+  };
+
+  const handleSaveNewMedRecord = async () => {
+    if (!newMedDesc.trim()) {
+      showToast('Por favor, ingresa una descripción para el tratamiento o vacuna.', 'error');
+      return;
+    }
+    setIsSubmittingMed(true);
+    try {
+      const res = await fetch(`/api/mascotas/${id}/historial`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          fecha: newMedFecha,
+          descripcion: newMedDesc.trim(),
+          vacuna: newMedVacuna,
+          desparasitacion: newMedDesparasitacion
+        })
+      });
+      if (res.ok) {
+        showToast('¡Registro médico agregado al historial con éxito!', 'success');
+        setNewMedDesc('');
+        setNewMedVacuna(false);
+        setNewMedDesparasitacion(false);
+        setShowAddMedForm(false);
+        const resH = await fetch(`/api/mascotas/${id}/historial`);
+        if (resH.ok) {
+          setHistorial(await resH.json());
+        }
+      } else {
+        showToast('Ocurrió un error al guardar el registro médico.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error de conexión con el servidor.', 'error');
+    } finally {
+      setIsSubmittingMed(false);
+    }
+  };
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/login', { state: { returnUrl: `/dashboard/edit-pet/${id}` } });
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        navigate('/login', { state: { returnUrl: `/dashboard/edit-pet/${id}` }, replace: true });
+      } else if (user?.rol !== 'REFUGIO' && user?.rol !== 'ADMIN') {
+        navigate('/mascotas', { replace: true });
+      }
     }
-  }, [authLoading, isAuthenticated, navigate, id]);
+  }, [authLoading, isAuthenticated, user, navigate, id]);
 
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [selectedPersonalities, setSelectedPersonalities] = useState<string[]>([]);
   const [toastMsg, setToastMsg] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [petData, setPetData] = useState<any>(null);
+
+  useEffect(() => {
+    if (id) {
+      fetch(`/api/mascotas/${id}/historial`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setHistorial(data))
+        .catch(() => setHistorial([]));
+    }
+  }, [id]);
 
   useEffect(() => {
     if (id) {
@@ -102,30 +244,80 @@ export default function EditPet() {
     setTempImage(null);
   };
 
+  const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
+
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setTempImage(event.target?.result as string);
-        setIsCropping(true);
-      };
-      reader.readAsDataURL(e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validación: Rechazar PDF y archivos no imágenes
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf') || !file.type.startsWith('image/')) {
+      setError('Formato no permitido: No se aceptan archivos PDF ni documentos. Sube solo imágenes (JPG, PNG, WEBP).');
+      showToast('No se permiten archivos PDF. Solo imágenes.', 'error');
+      e.target.value = '';
+      return;
     }
+
+    // Validación: Rechazar archivos mayores a 3MB
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      setError(`El archivo "${file.name}" pesa ${sizeMB}MB y supera el límite máximo permitido de 3MB.`);
+      showToast('La imagen supera el límite máximo de 3MB.', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    setError('');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setTempImage(event.target?.result as string);
+      setIsCropping(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      Array.from(e.target.files).forEach((file) => {
-        if (!file.type.startsWith("image/")) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            setGalleryPreviews((prev) => [...prev, event.target!.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+    if (!e.target.files) return;
+
+    const files = Array.from(e.target.files);
+    let hasPdf = false;
+    let hasTooLarge = false;
+    let addedCount = 0;
+
+    files.forEach((file: File) => {
+      // Rechazo de PDF
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf') || !file.type.startsWith('image/')) {
+        hasPdf = true;
+        return;
+      }
+      // Rechazo > 3MB
+      if (file.size > MAX_FILE_SIZE) {
+        hasTooLarge = true;
+        return;
+      }
+
+      addedCount++;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setGalleryPreviews((prev) => [...prev, event.target!.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (hasPdf) {
+      setError('Formato no permitido: Se rechazaron archivos PDF. Solo se admiten imágenes (JPG, PNG, WEBP).');
+      showToast('Se rechazaron archivos PDF.', 'error');
+    } else if (hasTooLarge) {
+      setError('Una o más fotos superan el límite de 3MB y fueron rechazadas.');
+      showToast('Algunas fotos superan los 3MB.', 'error');
+    } else if (addedCount > 0) {
+      setError('');
     }
+
+    e.target.value = '';
   };
 
   const removeGalleryImage = (index: number) => {
@@ -142,27 +334,78 @@ export default function EditPet() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError('');
     const formData = new FormData(e.currentTarget);
     
+    const nombre = formData.get('nombre')?.toString().trim();
+    const raza = formData.get('raza')?.toString().trim();
+    const edad = formData.get('edad')?.toString().trim();
+    const ubicacion = formData.get('ubicacion')?.toString().trim();
+    const peso = formData.get('peso')?.toString().trim();
+    const descripcion = formData.get('descripcion')?.toString().trim();
+
     if (!coverPreview) {
-      showToast('Sube al menos la foto principal.', 'error');
+      setError('Debes subir al menos la foto principal de la portada.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!nombre) {
+      setError('Por favor, ingresa el nombre de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!raza) {
+      setError('Por favor, ingresa la raza de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!edad) {
+      setError('Por favor, ingresa la edad de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!ubicacion) {
+      setError('Por favor, ingresa la ubicación de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!peso) {
+      setError('Por favor, ingresa el peso de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (selectedPersonalities.length === 0) {
+      setError('Por favor, selecciona al menos una cualidad de personalidad.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+      return;
+    }
+
+    if (!descripcion) {
+      setError('Por favor, escribe una historia o descripción de la mascota.');
+      window.scrollTo({ top: 180, behavior: 'smooth' });
       return;
     }
 
     // Construct payload
     const payload = {
-      nombre: formData.get('nombre'),
+      nombre,
       tipo: tipo.toLowerCase(),
-      raza: formData.get('raza'),
-      edad: (formData.get('edad')?.toString().replace(/\D/g, '') || '12') + ' ' + unidadEdad.toLowerCase(),
-      ubicacion: formData.get('ubicacion'),
-      peso: formData.get('peso'),
+      raza,
+      edad: edad.replace(/\D/g, '') + ' ' + unidadEdad.toLowerCase(),
+      ubicacion,
+      peso,
       tamano: tamano,
       energia: energia,
       conNinos: conNinos,
       origen: origen.toLowerCase(),
       personalidad: selectedPersonalities.join(','),
-      descripcion: formData.get('descripcion'),
+      descripcion,
       imagenUrl: coverPreview,
       galeria: galleryPreviews,
       categoria: tipo.toUpperCase()
@@ -181,11 +424,11 @@ export default function EditPet() {
           navigate('/refugio');
         }, 1500);
       } else {
-        showToast('Ocurrió un error al actualizar la mascota.', 'error');
+        setError('Ocurrió un error al actualizar la mascota en el servidor.');
       }
     } catch (err) {
       console.error(err);
-      showToast('Error de conexión.', 'error');
+      setError('Error de conexión con el servidor.');
     }
   };
 
@@ -248,13 +491,29 @@ export default function EditPet() {
         </BlurFade>
 
         <BlurFade delay={0.2} inView className="mb-10">
-          <h1 className="text-1xl md:text-4xl font-semibold tracking-tight text-gray-900">Nueva publicación</h1>
-          <p className="text-gray-500 mt-1 max-w-96 text-base font-medium">Agrega una mascota con varias fotos y una ficha completa para que destaque.</p>
+          <h1 className="text-1xl md:text-4xl font-semibold tracking-tight text-gray-900">Editar Mascota</h1>
+          <p className="text-gray-500 mt-1 max-w-96 text-base font-medium">Actualiza la información, fotos y ficha completa de la mascota.</p>
         </BlurFade>
 
         <BlurFade delay={0.3} inView>
-          <form onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_60px_rgba(11,132,255,0.08)] border border-white p-8 md:p-10 space-y-12">
+          <form onSubmit={handleSubmit} noValidate className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_60px_rgba(11,132,255,0.08)] border border-white p-8 md:p-10 space-y-12">
             
+            <AnimatePresence mode="popLayout">
+              {error && (
+                <motion.div 
+                  layout
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.25 }}
+                  className="p-4 bg-red-50/90 border border-red-200 text-red-600 text-sm font-semibold rounded-2xl text-center shadow-sm flex items-center justify-center gap-2.5"
+                >
+                  <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+                  <span>{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* FOTO PRINCIPAL */}
             <section className="space-y-5">
               <div>
@@ -489,8 +748,286 @@ export default function EditPet() {
               ></textarea>
             </section>
 
+            {/* HISTORIAL MÉDICO Y VACUNACIÓN GESTIONABLE POR EL REFUGIO */}
+            <section className="space-y-5 pt-6 border-t border-gray-100">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="text-xl font-bold text-gray-900">Historial Médico y Vacunación</h2>
+                    <span className="px-3 py-1 bg-blue-50 border border-blue-200 text-[#0B84FF] text-xs font-bold rounded-full flex items-center gap-1.5 shadow-sm">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#0B84FF]" /> Gestión de Salud
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 font-medium mt-1">Registra, edita o elimina vacunas, desparasitaciones y tratamientos médicos.</p>
+                </div>
+                
+                <div className="flex items-center gap-2.5">
+                  <motion.button
+                    type="button"
+                    whileHover="hover"
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => {
+                      setShowAddMedForm(!showAddMedForm);
+                      setEditingMedId(null);
+                    }}
+                    className="px-4 py-2 bg-[#abd5ff] hover:bg-[#97cbff] text-blue-900 text-xs font-bold rounded-full shadow-inner shadow-white/80 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <motion.span
+                      variants={{
+                        hover: { rotate: 180, scale: 1.15 }
+                      }}
+                      transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                      className="inline-flex items-center justify-center"
+                    >
+                      {showAddMedForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
+                    </motion.span>
+                    <span>{showAddMedForm ? 'Cancelar' : 'Añadir Registro Médico'}</span>
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* FORMULARIO PARA AGREGAR NUEVO REGISTRO CLÍNICO */}
+              {showAddMedForm && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-6 bg-blue-50/40 border border-blue-200/80 rounded-3xl space-y-4"
+                >
+                  <span className="text-xs font-bold text-gray-800 block">
+                    Nuevo Registro Médico / Vacuna
+                  </span>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="sm:w-1/3">
+                      <label className="block text-xs font-bold text-gray-600 mb-1.5">Fecha</label>
+                      <DatePicker 
+                        value={newMedFecha} 
+                        onChange={setNewMedFecha}
+                        placeholder="Seleccionar fecha"
+                      />
+                    </div>
+                    <div className="sm:w-2/3 flex flex-wrap items-center gap-3 pt-2 sm:pt-6">
+                      <AnimatedCheckbox 
+                        checked={newMedVacuna} 
+                        onChange={setNewMedVacuna} 
+                        label="¿Es Vacuna?"
+                        activeColor="blue"
+                      />
+                      <AnimatedCheckbox 
+                        checked={newMedDesparasitacion} 
+                        onChange={setNewMedDesparasitacion} 
+                        label="¿Es Desparasitación?"
+                        activeColor="purple"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1.5">Descripción / Tratamiento / Diagnóstico</label>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input 
+                        type="text" 
+                        value={newMedDesc} 
+                        onChange={(e) => setNewMedDesc(e.target.value)}
+                        placeholder="Ej. Refuerzo vacuna antirrábica / Control veterinario..."
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:border-[#0B84FF] outline-none"
+                      />
+                      <motion.button 
+                        type="button" 
+                        whileHover="hover"
+                        whileTap={{ scale: 0.94 }}
+                        disabled={isSubmittingMed}
+                        onClick={handleSaveNewMedRecord}
+                        className="px-5 py-2.5 bg-[#abd5ff] hover:bg-[#97cbff] disabled:opacity-50 text-blue-900 text-sm font-bold rounded-full shadow-inner shadow-white/80 transition-colors flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                      >
+                        <motion.span
+                          variants={{
+                            hover: { rotate: 180, scale: 1.15 }
+                          }}
+                          transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                          className="inline-flex items-center justify-center"
+                        >
+                          <Plus className="w-4 h-4 stroke-[2.5]" />
+                        </motion.span>
+                        <span>Guardar en Historial</span>
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* LISTA DE REGISTROS MÉDICOS CON EDICIÓN Y ELIMINACIÓN */}
+              <div className="space-y-3">
+                {historial.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {historial.map((reg: any, idx: number) => {
+                      const isEditing = editingMedId === reg.id;
+
+                      if (isEditing) {
+                        return (
+                          <div 
+                            key={reg.id || idx}
+                            className="p-4 rounded-2xl bg-blue-50/70 border-2 border-[#0B84FF] flex flex-col gap-3 shadow-md col-span-1 sm:col-span-2 md:col-span-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-[#0B84FF] flex items-center gap-1.5">
+                                <Pencil className="w-3.5 h-3.5" /> Editar Registro Médico
+                              </span>
+                              <button
+                                type="button"
+                                onClick={handleCancelEditMed}
+                                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg transition"
+                                title="Cancelar edición"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-[11px] font-bold text-gray-600 mb-1">Fecha</label>
+                                <DatePicker
+                                  value={editMedFecha}
+                                  onChange={setEditMedFecha}
+                                  placeholder="Seleccionar fecha"
+                                />
+                              </div>
+                              <div className="flex items-center gap-3 pt-4">
+                                <AnimatedCheckbox
+                                  checked={editMedVacuna}
+                                  onChange={setEditMedVacuna}
+                                  label="Vacuna"
+                                  activeColor="blue"
+                                />
+                                <AnimatedCheckbox
+                                  checked={editMedDesparasitacion}
+                                  onChange={setEditMedDesparasitacion}
+                                  label="Desparasitación"
+                                  activeColor="purple"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-bold text-gray-600 mb-1">Descripción</label>
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <input
+                                  type="text"
+                                  value={editMedDesc}
+                                  onChange={(e) => setEditMedDesc(e.target.value)}
+                                  placeholder="Descripción del tratamiento..."
+                                  className="flex-1 px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:border-[#0B84FF] outline-none"
+                                />
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={isSubmittingEditMed}
+                                    onClick={() => handleSaveEditMedRecord(reg.id)}
+                                    className="px-4 py-2 bg-[#0B84FF] hover:bg-blue-600 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                                  >
+                                    <Check className="w-3.5 h-3.5" /> Guardar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleCancelEditMed}
+                                    className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div 
+                          key={reg.id || idx} 
+                          className="p-4 rounded-2xl bg-white border border-gray-200 flex flex-col justify-between gap-3  hover:shadow-2xl transition-all relative group"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0B84FF] flex items-center justify-center shrink-0 border border-blue-100">
+                              <FileText className="w-4 h-4" />
+                            </div>
+
+                            {/* BOTONES DE EDICIÓN Y ELIMINACIÓN */}
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditMed(reg)}
+                                className="p-1.5 bg-gray-50 hover:bg-blue-50 text-gray-500 hover:text-[#0B84FF] rounded-lg transition border border-gray-100 hover:border-blue-200 cursor-pointer"
+                                title="Editar registro médico"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMedRecord(reg.id)}
+                                className="p-1.5 bg-gray-50 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-lg transition border border-gray-100 hover:border-red-200 cursor-pointer"
+                                title="Eliminar registro médico"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug">
+                              {reg.descripcion}
+                            </p>
+                          </div>
+
+                          <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-1">
+                            <span className="text-[11px] font-semibold text-gray-500">
+                              {reg.fecha ? new Date(reg.fecha).toLocaleDateString() : 'Sin fecha'}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              {reg.vacuna && (
+                                <span className="px-2 py-0.5 bg-blue-50 text-[#0B84FF] font-bold rounded-md text-[10px] border border-blue-100">
+                                  Vacuna
+                                </span>
+                              )}
+                              {reg.desparasitacion && (
+                                <span className="px-2 py-0.5 bg-purple-50 text-purple-700 font-bold rounded-md text-[10px] border border-purple-100">
+                                  Desparasitación
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 rounded-2xl bg-gray-50/60 border border-dashed border-gray-200 text-center">
+                    <p className="text-xs text-gray-600 font-semibold">Aún no hay registros médicos añadidos para esta mascota.</p>
+                    <span className="inline-flex items-center gap-1 text-[11px] text-[#0B84FF] font-semibold mt-1">
+                      Usa el botón "Añadir Registro Médico" para registrar sus vacunas o revisiones clínicas.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </section>
+
             {/* SUBMIT BUTTON */}
-            <div className="pt-4 flex justify-center">
+            <div className="pt-4 flex flex-col items-center gap-4">
+              <AnimatePresence mode="popLayout">
+                {error && (
+                  <motion.div 
+                    layout
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.25 }}
+                    className="w-full max-w-md p-4 bg-red-50/90 border border-red-200 text-red-600 text-sm font-semibold rounded-2xl text-center shadow-sm flex items-center justify-center gap-2.5"
+                  >
+                    <AlertCircle className="w-5 h-5 shrink-0 text-red-500" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <RainbowButton 
                 type="submit"
                 className="w-fit px-12 py-6 rounded-[1.2rem] text-lg font-bold shadow-[0_10px_20px_rgba(11,132,255,0.3)]"

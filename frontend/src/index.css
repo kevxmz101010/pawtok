@@ -9,6 +9,19 @@
   --animate-rainbow: rainbow var(--speed, 2s) infinite linear;
   --animate-marquee-left: marquee-left var(--duration, 30s) linear infinite;
   --animate-marquee-right: marquee-right var(--duration, 30s) linear infinite;
+  --animate-scribble: scribble 0.28s ease-in-out infinite;
+
+  @keyframes scribble {
+    0%, 100% {
+      transform: rotate(0deg) translate(0, 0);
+    }
+    25% {
+      transform: rotate(-16deg) translate(-1.5px, -1px);
+    }
+    75% {
+      transform: rotate(10deg) translate(1.5px, 0.5px);
+    }
+  }
 
   @keyframes rainbow {
     0% {

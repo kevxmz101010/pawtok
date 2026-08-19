@@ -1,6 +1,11 @@
 import React from "react";
 
-interface RainbowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+export interface RainbowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children?: React.ReactNode;
+  className?: string;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  type?: "button" | "submit" | "reset";
+}
 
 export function RainbowButton({
   children,

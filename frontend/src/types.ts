@@ -65,6 +65,7 @@ export interface RegisterRequest {
   nombre: string;
   email: string;
   contrasena: string;
+  telefono?: string;
 }
 
 export interface MascotaDTO {

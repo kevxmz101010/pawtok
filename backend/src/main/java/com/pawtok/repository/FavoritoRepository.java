@@ -6,6 +6,7 @@ import java.util.Optional;
 
 public interface FavoritoRepository extends JpaRepository<Favorito, Long> {
     List<Favorito> findByUsuarioId(Long id);
+    List<Favorito> findByMascotaId(Long mascotaId);
     long countByUsuarioId(Long id);
     Optional<Favorito> findByUsuarioIdAndMascotaId(Long usuarioId, Long mascotaId);
 }

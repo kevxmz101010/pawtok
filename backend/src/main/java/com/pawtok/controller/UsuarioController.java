@@ -43,6 +43,7 @@ public class UsuarioController {
     public ResponseEntity<UsuarioDTO> updatePerfil(
             @RequestParam("nombre") String nombre,
             @RequestParam("email") String email,
+            @RequestParam(value = "telefono", required = false) String telefono,
             @RequestParam(value = "bio", required = false) String bio,
             @RequestParam(value = "foto", required = false) MultipartFile foto) {
 
@@ -58,6 +59,10 @@ public class UsuarioController {
                 throw new RuntimeException("El correo ya está en uso");
             }
             usuario.setEmail(email);
+        }
+
+        if (telefono != null) {
+            usuario.setTelefono(telefono);
         }
 
         if (bio != null) {

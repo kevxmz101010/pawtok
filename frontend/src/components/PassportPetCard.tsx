@@ -149,7 +149,7 @@ export default function PassportPetCard({
         transition={{
           scale: isEntering ? { duration: 0 } : { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
         }}
-        className="relative z-10 rounded-[2rem] overflow-hidden group h-full flex flex-col justify-end cursor-pointer bg-slate-950 transition-colors duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+        className="relative z-10 rounded-[2rem] overflow-hidden group h-full flex flex-col justify-end cursor-pointer bg-white transition-colors duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
       >
         {/* ================= Capa 1: Imagen de Fondo (Z = 0) ================= */}
         <div

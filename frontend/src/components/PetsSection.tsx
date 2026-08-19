@@ -187,9 +187,9 @@ export default function PetsSection() {
     <section id="mascotas-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24">
       {/* Header */}
       <motion.div 
-        initial={{ opacity: 0, filter: 'blur(12px)', y: 20 }}
+        initial={{ opacity: 0, filter: 'blur(10px)', y: 22 }}
         animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
+        transition={{ duration: 0.5, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
         className="mb-12 text-center md:text-center"
       >
         <h2 className="text-4xl md:text-5xl font-semibold text-gray-900 leading-tight mb-4 tracking-tight">
@@ -207,8 +207,9 @@ export default function PetsSection() {
 
       {surveyAnswers && (
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, filter: 'blur(8px)', y: 20 }}
+          animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+          transition={{ duration: 0.45, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
           className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex items-center justify-between mb-8"
         >
           <div className="flex items-center gap-3">
@@ -226,9 +227,9 @@ export default function PetsSection() {
 
         {/* Filters Box */}
         <motion.div 
-          initial={{ opacity: 0, filter: 'blur(12px)', y: 20 }}
+          initial={{ opacity: 0, filter: 'blur(10px)', y: 22 }}
           animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
           className="mt-8 bg-white/70 backdrop-blur-xl rounded-[2rem] border border-gray-100 shadow-[0_10px_30px_rgba(11,132,255,0.08)] p-5"
         >
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -263,9 +264,9 @@ export default function PetsSection() {
         </motion.div>
 
       <motion.div 
-        initial={{ opacity: 0, filter: 'blur(12px)', y: 20 }}
+        initial={{ opacity: 0, filter: 'blur(8px)', y: 16 }}
         animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        transition={{ duration: 0.45, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
         className="flex items-center justify-between mt-12 mb-6"
       >
         <h3 className="text-xl font-semibold text-gray-500">Mascotas disponibles</h3>
@@ -310,10 +311,15 @@ export default function PetsSection() {
                 <motion.div
                   layout
                   key={`${selectedType}-${pet.id}`}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                  transition={{ duration: 0.4, ease: 'easeOut', layout: { duration: 0.4 } }}
+                  initial={{ opacity: 0, y: 28, filter: 'blur(12px)', scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
+                  exit={{ opacity: 0, y: -15, filter: 'blur(8px)', scale: 0.94 }}
+                  transition={{ 
+                    duration: 0.45, 
+                    delay: 0.2 + Math.min(idx * 0.045, 0.45), 
+                    ease: [0.16, 1, 0.3, 1], 
+                    layout: { duration: 0.35, ease: 'easeOut' } 
+                  }}
                 >
                   <PassportPetCard
                     pet={pet}

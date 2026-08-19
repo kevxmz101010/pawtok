@@ -21,6 +21,7 @@ import java.util.List;
 public class AdopcionController {
 
     private final AdopcionService adopcionService;
+    private final com.pawtok.repository.UsuarioRepository usuarioRepository;
 
     /**
      * Crear una nueva solicitud de adopción.
@@ -36,6 +37,25 @@ public class AdopcionController {
     @GetMapping("/mis-adopciones")
     public ResponseEntity<List<AdopcionDTO>> getMisAdopciones(Authentication authentication) {
         return ResponseEntity.ok(adopcionService.getAdopcionesByUsuario(authentication.getName()));
+    }
+
+    /**
+     * Obtener solicitudes de un usuario específico por ID (Control de Aislamiento CP-HU-11).
+     * Devuelve HTTP 403 Forbidden si un usuario intenta consultar el historial de otro.
+     */
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<AdopcionDTO>> getAdopcionesPorUsuarioId(
+            @PathVariable Long usuarioId,
+            Authentication authentication) {
+        String authEmail = authentication.getName();
+        com.pawtok.model.Usuario authUser = usuarioRepository.findByEmail(authEmail)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Usuario no autenticado"));
+
+        if (!authUser.getId().equals(usuarioId) && authUser.getRol() != com.pawtok.model.enums.Rol.ADMIN) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN, "No autorizado para consultar el historial de otro usuario");
+        }
+
+        return ResponseEntity.ok(adopcionService.getAdopcionesByUsuario(authUser.getEmail()));
     }
 
     /**

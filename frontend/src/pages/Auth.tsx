@@ -165,7 +165,7 @@ export default function Auth({ initialMode }: { initialMode: 'login' | 'register
               layout
               type="submit"
               disabled={loading}
-              className="w-full relative mt-4 bg-[#0B84FF] text-white hover:bg-[#157def] active:scale-[0.98] py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer shadow-[inset_0px_2px_7px_#81c5ff,inset_0px_-3px_11px_#0048a8,0px_8px_15px_rgba(11,132,255,0.3)] hover:shadow-[inset_0px_2px_4px_#81c5ff,inset_0px_-3px_4px_#0053c2,0px_12px_20px_rgba(11,132,255,0.4)] disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full relative mt-4 bg-[#0B84FF] text-white hover:bg-[#157def] active:scale-[0.98] py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer shadow-[inset_0px_2px_7px_#81c5ff,inset_0px_-3px_11px_#0048a8] hover:shadow-[inset_0px_2px_4px_#81c5ff,inset_0px_-3px_4px_#0053c2] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <div className="absolute inset-x-0 h-[2px] w-1/2 mx-auto -top-px shadow-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
               <span className="relative z-20">

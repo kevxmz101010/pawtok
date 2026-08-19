@@ -203,8 +203,17 @@ export default function Onboarding() {
                   <textarea rows={3} className={inputClass} value={bio} onChange={e => setBio(e.target.value)} placeholder="Cuéntanos un poco sobre ti y por qué quieres adoptar..." />
                 </div>
                 <div>
-                  <label className={labelClass}>Teléfono (Opcional)</label>
-                  <input type="text" className={inputClass} value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Ej. 300 123 4567" />
+                  <label className={labelClass}>
+                    Teléfono de contacto <span className="text-[#0B84FF] text-xs font-normal">(obligatorio para adoptar)</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    className={inputClass}
+                    value={telefono}
+                    onChange={e => setTelefono(e.target.value)}
+                    placeholder="Ej. +57 300 123 4567"
+                  />
                 </div>
                 <div>
                   <label className={labelClass}>Foto de perfil (Opcional)</label>

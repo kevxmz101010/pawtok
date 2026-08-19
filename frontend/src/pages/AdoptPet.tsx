@@ -4,6 +4,7 @@ import { ChevronLeft, CheckCircle2, Calendar, Clock, Home as HomeIcon, Briefcase
 import { MascotaDTO } from '../types';
 import { BlurFade } from '../components/ui/blur-fade';
 import { RainbowButton } from '../components/ui/rainbow-button';
+import { DatePicker } from '../components/ui/date-picker';
 import { useAuth } from '../context/AuthContext';
 
 /**
@@ -135,22 +136,38 @@ export default function AdoptPet() {
     );
   }
 
-  const fotoUrl = pet.foto ? `http://localhost:8080/uploads/${pet.foto}` : "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80";
+  const getPetImageUrl = () => {
+    if (!pet) return "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800";
+    const img = pet.imagenUrl || (pet as any).foto;
+    if (!img || img.trim() === '') {
+      const isCat = pet.categoria?.toLowerCase() === 'gato';
+      return isCat
+        ? "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=800"
+        : "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800";
+    }
+    if (img.startsWith('http') || img.startsWith('data:')) return img;
+    if (img.startsWith('/')) return `http://localhost:8080${img}`;
+    return `http://localhost:8080/uploads/${img.split('/').pop()}`;
+  };
+
+  const fotoUrl = getPetImageUrl();
   const minDate = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="bg-gray-50 font-inter text-gray-800 min-h-screen pt-24 pb-12 px-4 md:px-8">
+    <div className="bg-gray-50/50 font-inter text-gray-800 min-h-screen pt-24 pb-12 px-4 md:px-8">
       
       {/* Top Navigation */}
       <div className="max-w-6xl mx-auto mb-8">
-        <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-900 transition flex items-center gap-2 font-medium">
-          <ChevronLeft className="w-5 h-5" /> Volver a Detalles
-        </button>
+        <BlurFade delay={0.05} inView={false}>
+          <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-gray-900 transition flex items-center gap-2 font-medium cursor-pointer hover:translate-x-[-2px] duration-200">
+            <ChevronLeft className="w-5 h-5" /> Volver a Detalles
+          </button>
+        </BlurFade>
       </div>
 
       <div className="max-w-6xl mx-auto">
-        <BlurFade delay={0.1} inView>
-          <div className="bg-white rounded-[2.5rem] shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-gray-100 overflow-hidden flex flex-col lg:flex-row">
+        <BlurFade delay={0.10} inView={false}>
+          <div className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-[0_15px_35px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden flex flex-col lg:flex-row">
             
             {/* Left Side: Form */}
             <div className="p-8 md:p-12 lg:w-2/3">
@@ -162,7 +179,7 @@ export default function AdoptPet() {
                   <h3 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">¡Solicitud Enviada!</h3>
                   <p className="text-gray-500 mb-10 text-lg max-w-md">Hemos enviado tu formulario al refugio. Ellos revisarán tu perfil y se pondrán en contacto pronto.</p>
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <button onClick={() => navigate('/cuenta')} className="px-8 py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition">
+                    <button onClick={() => navigate('/cuenta')} className="px-8 py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition cursor-pointer">
                       Ir a mi Panel
                     </button>
                     <RainbowButton onClick={() => navigate('/mascotas')} className="px-8 py-4 h-auto text-base font-bold shadow-lg">
@@ -171,7 +188,7 @@ export default function AdoptPet() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-12">
+                <form onSubmit={handleSubmit} className="space-y-10">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Solicitud de Adopción</h2>
                     <p className="text-gray-500">Estás a un paso de darle un hogar a <span className="font-semibold text-[#0B84FF]">{pet.nombre}</span>. Por favor completa este formulario para que el refugio te conozca mejor.</p>
@@ -185,163 +202,202 @@ export default function AdoptPet() {
                   )}
 
                   {/* Section 1: Cita */}
-                  <div className="bg-gray-50/50 p-6 md:p-8 rounded-[2rem] border border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6">
-                      <span className="w-8 h-8 bg-blue-100 text-[#0B84FF] rounded-xl flex items-center justify-center text-sm shadow-sm">1</span>
-                      Agendar Visita
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                          <Calendar className="w-4 h-4 text-gray-400" /> Fecha deseada
-                        </label>
-                        <input type="date" required min={minDate} value={fecha} onChange={e => setFecha(e.target.value)}
-                               className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
-                      </div>
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                          <Clock className="w-4 h-4 text-gray-400" /> Hora aproximada
-                        </label>
-                        <select required value={hora} onChange={e => setHora(e.target.value)}
-                                className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm appearance-none cursor-pointer">
-                          <option value="09:00">09:00 AM</option>
-                          <option value="10:00">10:00 AM</option>
-                          <option value="14:00">02:00 PM</option>
-                          <option value="16:00">04:00 PM</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section 2: Contacto & Info */}
-                  <div className="bg-gray-50/50 p-6 md:p-8 rounded-[2rem] border border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6">
-                      <span className="w-8 h-8 bg-blue-100 text-[#0B84FF] rounded-xl flex items-center justify-center text-sm shadow-sm">2</span>
-                      Datos Personales
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                          <Phone className="w-4 h-4 text-gray-400" /> Teléfono / Celular
-                        </label>
-                        <input type="tel" required placeholder="+57 300..." value={telefono} onChange={e => setTelefono(e.target.value)}
-                               className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
-                      </div>
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                          <MapPin className="w-4 h-4 text-gray-400" /> Dirección de vivienda
-                        </label>
-                        <input type="text" required placeholder="Calle 123 #45-67" value={direccion} onChange={e => setDireccion(e.target.value)}
-                               className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
-                      </div>
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                          <Briefcase className="w-4 h-4 text-gray-400" /> Ocupación
-                        </label>
-                        <input type="text" required placeholder="Ej. Estudiante, Ingeniero" value={ocupacion} onChange={e => setOcupacion(e.target.value)}
-                               className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
-                      </div>
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                          <DollarSign className="w-4 h-4 text-gray-400" /> Rango de Ingresos
-                        </label>
-                        <select required value={ingresos} onChange={e => setIngresos(e.target.value)}
-                                className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm appearance-none cursor-pointer">
-                          <option value="Menos de 1SMMLV">Menos de 1 SMMLV</option>
-                          <option value="1-2 SMMLV">1 - 2 SMMLV</option>
-                          <option value="Más de 2 SMMLV">Más de 2 SMMLV</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section 3: Hogar */}
-                  <div className="bg-gray-50/50 p-6 md:p-8 rounded-[2rem] border border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6">
-                      <span className="w-8 h-8 bg-blue-100 text-[#0B84FF] rounded-xl flex items-center justify-center text-sm shadow-sm">3</span>
-                      Información del Hogar
-                    </h3>
-                    <div className="space-y-6">
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
-                          <HomeIcon className="w-4 h-4 text-gray-400" /> Tipo de Vivienda
-                        </label>
-                        <div className="grid grid-cols-3 gap-4">
-                          {['Casa', 'Apartamento', 'Finca'].map(tipo => (
-                            <label key={tipo} className="cursor-pointer">
-                              <input type="radio" name="vivienda" value={tipo} checked={vivienda === tipo} onChange={() => setVivienda(tipo)} className="peer sr-only" />
-                              <div className="text-center py-4 rounded-2xl border-2 border-gray-100 peer-checked:border-[#0B84FF] peer-checked:bg-blue-50 peer-checked:text-[#0B84FF] font-semibold bg-white transition shadow-sm">
-                                {tipo === 'Apartamento' ? 'Apto' : tipo}
-                              </div>
-                            </label>
-                          ))}
+                  <BlurFade delay={0.15} inView={false}>
+                    <div className="bg-gray-50/70 p-6 md:p-8 rounded-[2rem] border border-gray-100">
+                      <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6">
+                        <span className="w-8 h-8 bg-blue-100 text-[#0B84FF] rounded-xl flex items-center justify-center text-sm shadow-sm font-extrabold">1</span>
+                        Agendar Visita
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+                            <Calendar className="w-4 h-4 text-gray-400" /> Fecha deseada
+                          </label>
+                          <DatePicker 
+                            value={fecha} 
+                            onChange={setFecha}
+                            minDate={minDate}
+                            placeholder="Seleccionar fecha"
+                          />
+                        </div>
+                        <div>
+                          <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+                            <Clock className="w-4 h-4 text-gray-400" /> Hora aproximada
+                          </label>
+                          <select required value={hora} onChange={e => setHora(e.target.value)}
+                                  className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm appearance-none cursor-pointer">
+                            <option value="09:00">09:00 AM</option>
+                            <option value="10:00">10:00 AM</option>
+                            <option value="14:00">02:00 PM</option>
+                            <option value="16:00">04:00 PM</option>
+                          </select>
                         </div>
                       </div>
-                      
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">¿Tienes otras mascotas? (Describe)</label>
-                        <input type="text" placeholder="Ej. Sí, un perro criollo rescatado..." value={otrasMascotas} onChange={e => setOtrasMascotas(e.target.value)}
-                               className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
-                      </div>
+                    </div>
+                  </BlurFade>
 
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">¿Por qué quieres adoptar a {pet.nombre}?</label>
-                        <textarea rows={4} required value={motivo} onChange={e => setMotivo(e.target.value)}
-                                  className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm resize-none" 
-                                  placeholder="Cuéntanos por qué serías la familia ideal..."></textarea>
+                  {/* Section 2: Contacto & Info */}
+                  <BlurFade delay={0.20} inView={false}>
+                    <div className="bg-gray-50/70 p-6 md:p-8 rounded-[2rem] border border-gray-100">
+                      <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6">
+                        <span className="w-8 h-8 bg-blue-100 text-[#0B84FF] rounded-xl flex items-center justify-center text-sm shadow-sm font-extrabold">2</span>
+                        Datos Personales
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+                            <Phone className="w-4 h-4 text-gray-400" /> Teléfono / Celular
+                          </label>
+                          <input type="tel" required placeholder="+57 300..." value={telefono} onChange={e => setTelefono(e.target.value)}
+                                 className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
+                        </div>
+                        <div>
+                          <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+                            <MapPin className="w-4 h-4 text-gray-400" /> Dirección de vivienda
+                          </label>
+                          <input type="text" required placeholder="Calle 123 #45-67" value={direccion} onChange={e => setDireccion(e.target.value)}
+                                 className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
+                        </div>
+                        <div>
+                          <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+                            <Briefcase className="w-4 h-4 text-gray-400" /> Ocupación
+                          </label>
+                          <input type="text" required placeholder="Ej. Estudiante, Ingeniero" value={ocupacion} onChange={e => setOcupacion(e.target.value)}
+                                 className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
+                        </div>
+                        <div>
+                          <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+                            <DollarSign className="w-4 h-4 text-gray-400" /> Rango de Ingresos
+                          </label>
+                          <select required value={ingresos} onChange={e => setIngresos(e.target.value)}
+                                  className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm appearance-none cursor-pointer">
+                            <option value="Menos de 1SMMLV">Menos de 1 SMMLV</option>
+                            <option value="1-2 SMMLV">1 - 2 SMMLV</option>
+                            <option value="Más de 2 SMMLV">Más de 2 SMMLV</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </BlurFade>
 
-                  <div className="pt-4">
-                    <RainbowButton 
-                      type="submit" 
-                      className={`w-full py-4 text-lg h-auto rounded-2xl shadow-xl flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
-                    >
-                      {isSubmitting ? (
-                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : null}
-                      Enviar Solicitud al Refugio
-                    </RainbowButton>
-                    <p className="text-center text-sm text-gray-400 mt-6 font-medium">
-                      Al enviar, compartes esta información con el refugio asignado.
-                    </p>
-                  </div>
+                  {/* Section 3: Hogar */}
+                  <BlurFade delay={0.25} inView={false}>
+                    <div className="bg-gray-50/70 p-6 md:p-8 rounded-[2rem] border border-gray-100">
+                      <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6">
+                        <span className="w-8 h-8 bg-blue-100 text-[#0B84FF] rounded-xl flex items-center justify-center text-sm shadow-sm font-extrabold">3</span>
+                        Información del Hogar
+                      </h3>
+                      <div className="space-y-6">
+                        <div>
+                          <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                            <HomeIcon className="w-4 h-4 text-gray-400" /> Tipo de Vivienda
+                          </label>
+                          <div className="grid grid-cols-3 gap-4">
+                            {['Casa', 'Apartamento', 'Finca'].map(tipo => (
+                              <label key={tipo} className="cursor-pointer">
+                                <input type="radio" name="vivienda" value={tipo} checked={vivienda === tipo} onChange={() => setVivienda(tipo)} className="peer sr-only" />
+                                <div className="text-center py-4 rounded-2xl border-2 border-gray-100 peer-checked:border-[#0B84FF] peer-checked:bg-blue-50 peer-checked:text-[#0B84FF] font-semibold bg-white transition shadow-sm">
+                                  {tipo === 'Apartamento' ? 'Apto' : tipo}
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">¿Tienes otras mascotas? (Describe)</label>
+                          <input type="text" placeholder="Ej. Sí, un perro criollo rescatado..." value={otrasMascotas} onChange={e => setOtrasMascotas(e.target.value)}
+                                 className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm" />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">¿Por qué quieres adoptar a {pet.nombre}?</label>
+                          <textarea rows={4} required value={motivo} onChange={e => setMotivo(e.target.value)}
+                                    className="w-full px-5 py-4 rounded-2xl bg-white border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-[#0B84FF] outline-none transition shadow-sm resize-none" 
+                                    placeholder="Cuéntanos por qué serías la familia ideal..."></textarea>
+                        </div>
+                      </div>
+                    </div>
+                  </BlurFade>
+
+                  <BlurFade delay={0.30} inView={false}>
+                    <div className="pt-2">
+                      <RainbowButton 
+                        type="submit" 
+                        className={`w-full py-4 text-lg h-auto rounded-2xl shadow-xl flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
+                      >
+                        {isSubmitting ? (
+                          <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : null}
+                        Enviar Solicitud al Refugio
+                      </RainbowButton>
+                      <p className="text-center text-sm text-gray-400 mt-5 font-medium">
+                        Al enviar, compartes esta información con el refugio asignado.
+                      </p>
+                    </div>
+                  </BlurFade>
                 </form>
               )}
             </div>
 
-            {/* Right Side: Pet Card Summary */}
-            <div className="lg:w-1/3 bg-gray-50 border-l border-gray-100 p-8 flex flex-col justify-start">
+            {/* Right Side: Pet Card Summary (Liquid Glass PetDetails Style) */}
+            <div className="lg:w-1/3 bg-gray-50/50 border-t lg:border-t-0 lg:border-l border-gray-100 p-6 md:p-8 flex flex-col justify-start">
               <div className="sticky top-8">
-                <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">Mascota seleccionada</p>
-                <div className="bg-white rounded-[2rem] p-4 shadow-sm border border-gray-100">
-                  <div className="aspect-[4/5] rounded-[1.5rem] overflow-hidden mb-5">
-                    <img src={fotoUrl} alt={pet.nombre} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-                  </div>
-                  <div className="px-2 pb-2">
-                    <h3 className="text-2xl font-black text-gray-900 mb-2">{pet.nombre}</h3>
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      <span className="px-3 py-1.5 bg-blue-50 text-[#0B84FF] text-xs font-bold rounded-xl">{pet.raza}</span>
-                      <span className="px-3 py-1.5 bg-blue-50 text-[#0B84FF] text-xs font-bold rounded-xl">{pet.edad}{String(pet.edad).match(/^\d+$/) ? ' años' : (!String(pet.edad).toLowerCase().includes('año') && !String(pet.edad).toLowerCase().includes('mes') ? ' años' : '')}</span>
+                <BlurFade delay={0.18} inView={false}>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#0B84FF]"></span>
+                    Mascota seleccionada
+                  </p>
+                  
+                  <div className="bg-white/90 backdrop-blur-xl rounded-[2.2rem] p-5 shadow-[0px_20px_40px_-15px_rgba(0,0,0,0.06),inset_0px_0px_20px_rgba(255,255,255,1)] border border-white">
+                    {/* Contenedor de la foto con bisel superior y destello */}
+                    <div className="aspect-[4/5] rounded-[1.6rem] overflow-hidden mb-5 relative shadow-md border-2 border-white group/img">
+                      <img 
+                        src={fotoUrl} 
+                        alt={pet.nombre} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover/img:scale-105"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=800"; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 pointer-events-none" />
+                      <span className="absolute bottom-3 left-3 px-3 py-1 bg-white/80 backdrop-blur-md text-xs font-bold text-gray-900 rounded-full border border-white/60 shadow-xs capitalize">
+                        {pet.categoria || 'Mascota'}
+                      </span>
                     </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500 font-medium">Tamaño</span>
-                        <span className="font-bold text-gray-900">{pet.tamano || 'No especificado'}</span>
+
+                    <div className="px-1">
+                      <h3 className="text-2xl font-black text-gray-900 tracking-tight capitalize mb-2">{pet.nombre}</h3>
+                      
+                      {/* Badges de raza, edad y peso estilo PetDetails */}
+                      <div className="flex flex-wrap gap-1.5 mb-5">
+                        {pet.raza && <span className="px-3 py-1 bg-blue-50 text-[#0B84FF] text-xs font-bold rounded-full border border-blue-100">{pet.raza}</span>}
+                        {pet.edad && <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-full border border-gray-200">{pet.edad}{String(pet.edad).match(/^\d+$/) ? ' años' : (!String(pet.edad).toLowerCase().includes('año') && !String(pet.edad).toLowerCase().includes('mes') ? ' años' : '')}</span>}
+                        {pet.peso && <span className="px-3 py-1 bg-purple-50 text-purple-600 text-xs font-bold rounded-full border border-purple-100">{pet.peso} kg</span>}
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500 font-medium">Energía</span>
-                        <span className="font-bold text-gray-900">{pet.energia || 'Media'}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500 font-medium">Refugio</span>
-                        <span className="font-bold text-[#0B84FF] truncate max-w-[120px]">{pet.refugioNombre || 'Refugio Pawtok'}</span>
+
+                      {/* Fichas de especificaciones Liquid Glass */}
+                      <div className="space-y-2 pt-2 border-t border-gray-100">
+                        <div className="flex items-center justify-between py-2 px-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 text-xs">
+                          <span className="text-gray-500 font-semibold">Tamaño</span>
+                          <span className="font-bold text-gray-900 capitalize">{pet.tamano || 'Mediano'}</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 px-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 text-xs">
+                          <span className="text-gray-500 font-semibold">Energía</span>
+                          <span className="font-bold text-gray-900 capitalize">{pet.energia || 'Media'}</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 px-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 text-xs">
+                          <span className="text-gray-500 font-semibold">Refugio</span>
+                          <span className="font-bold text-[#0B84FF] truncate max-w-[130px]">{pet.refugioNombre || (pet.refugio ? `Refugio ${pet.refugio}` : 'Refugio Pawtok')}</span>
+                        </div>
+                        {pet.ubicacion && (
+                          <div className="flex items-center justify-between py-2 px-3.5 rounded-2xl bg-gray-50/80 border border-gray-100 text-xs">
+                            <span className="text-gray-500 font-semibold">Ubicación</span>
+                            <span className="font-bold text-gray-900 truncate max-w-[130px]">{pet.ubicacion}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
+                </BlurFade>
               </div>
             </div>
 

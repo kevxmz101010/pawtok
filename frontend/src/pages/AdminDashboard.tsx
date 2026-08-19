@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useConfirm } from '../context/ConfirmContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BarChart, Users, Heart, PawPrint, CheckCircle, Clock, Mail } from 'lucide-react';
+import { Users, PawPrint, CheckCircle2, Trash2, ArrowUpRight, Shield, Activity } from 'lucide-react';
 import { BlurFade } from '../components/ui/blur-fade';
+import Header from '../components/Header';
+import AdminHeaderNav from '../components/AdminHeaderNav';
+import Notification from '../components/Notification';
+import { ToastMessage } from '../types';
 
 const AdminDashboard = () => {
   const confirm = useConfirm();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [stats, setStats] = useState({
     usuarios: 0, adoptantes: 0, refugios: 0,
     mascotas: 0, disponibles: 0, solicitudes: 0
@@ -19,9 +24,13 @@ const AdminDashboard = () => {
   const [actividad, setActividad] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const handleShowToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToasts((prev) => [...prev, { id: Math.random().toString(36).substring(2, 9), type, message }]);
+  };
+
   useEffect(() => {
     if (!isAuthenticated || user?.rol !== 'ADMIN') {
-      navigate('/');
+      navigate('/login');
       return;
     }
     fetchData();
@@ -52,9 +61,12 @@ const AdminDashboard = () => {
     if (!await confirm("¿Seguro que deseas eliminar este usuario?")) return;
     try {
       const res = await fetch(`/api/admin/usuarios/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (res.ok) setUsuarios(usuarios.filter(u => u.id !== id));
+      if (res.ok) {
+        setUsuarios(usuarios.filter(u => u.id !== id));
+        handleShowToast('Usuario eliminado correctamente', 'success');
+      }
     } catch (err) {
-      console.error(err);
+      handleShowToast('Error al eliminar usuario', 'error');
     }
   };
 
@@ -62,147 +74,162 @@ const AdminDashboard = () => {
     if (!await confirm("¿Seguro que deseas eliminar este refugio?")) return;
     try {
       const res = await fetch(`/api/admin/refugios/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (res.ok) setRefugios(refugios.filter(r => r.id !== id));
+      if (res.ok) {
+        setRefugios(refugios.filter(r => r.id !== id));
+        handleShowToast('Refugio eliminado correctamente', 'success');
+      }
     } catch (err) {
-      console.error(err);
+      handleShowToast('Error al eliminar refugio', 'error');
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 border-3 border-[#0B84FF] border-t-transparent rounded-full animate-spin" />
+        <span className="text-sm font-semibold text-gray-400">Cargando panel Pawtok...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen bg-[#F4F7FE] font-sans selection:bg-[#0B84FF] selection:text-white overflow-hidden">
+    <div className="min-h-screen font-sans text-gray-800 bg-gray-50/50 selection:bg-[#0B84FF] selection:text-white pb-20 relative">
       
-      {/* SIDEBAR */}
-      <aside className="w-64 bg-white/80 backdrop-blur-2xl border-r border-white/50 flex flex-col shadow-[15px_0_30px_-15px_rgba(0,0,0,0.05)] relative z-20 h-full">
-        <div className="p-8 pb-4">
-          <Link to="/" className="text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-[#0B84FF] to-[#005bb5] drop-shadow-sm flex items-center gap-2">
-            Pawtok <span className="text-[#0B84FF]">.</span>
-          </Link>
-          <div className="mt-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Admin Panel</div>
-        </div>
+      {/* GLOBAL HEADER */}
+      <Header
+        onShowToast={handleShowToast}
+        onSelectDrop={() => {}}
+        searchQuery=""
+        setSearchQuery={() => {}}
+      />
 
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto pt-4">
-          <div className="flex items-center gap-3 px-4 py-3 bg-[#0B84FF] text-white rounded-2xl shadow-md font-semibold">
-            <BarChart size={22} />
-            <span>Resumen</span>
-          </div>
-          
-          <div className="px-4 py-2 mt-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Gestión</div>
-          <Link to="/admin" className="flex items-center gap-3 px-4 py-3 text-[#0B84FF] bg-blue-50 rounded-2xl hover:bg-gray-50 hover:text-[#0B84FF] transition font-semibold">
-            <Users size={22} />
-            <span>Usuarios & Refugios</span>
-          </Link>
-          <Link to="/admin/mascotas" className="flex items-center gap-3 px-4 py-3 text-gray-500 rounded-2xl hover:bg-gray-50 hover:text-[#0B84FF] transition font-semibold">
-            <PawPrint size={22} />
-            <span>Mascotas</span>
-          </Link>
-          <Link to="/admin/solicitudes-refugio" className="flex items-center gap-3 px-4 py-3 text-gray-500 rounded-2xl hover:bg-gray-50 hover:text-[#0B84FF] transition font-semibold">
-            <CheckCircle size={22} />
-            <span>Solicitudes</span>
-          </Link>
-          <Link to="/admin/mensajes" className="flex items-center gap-3 px-4 py-3 text-gray-500 rounded-2xl hover:bg-gray-50 hover:text-[#0B84FF] transition font-semibold">
-            <Mail size={22} />
-            <span>Mensajes</span>
-          </Link>
-        </nav>
+      {/* MAIN CONTAINER */}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-28">
+        
+        {/* ADMIN PROFILE & TAB NAV HEADER */}
+        <AdminHeaderNav activeTab="resumen" />
 
-        <div className="p-4 border-t border-gray-100">
-          <div className="bg-gray-50 p-4 rounded-2xl flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0B84FF] to-blue-600 flex items-center justify-center text-white font-bold shadow-md">
-              A
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold text-gray-900 truncate">Admin</div>
-              <div className="text-xs text-gray-500 truncate">{user?.email}</div>
-            </div>
-            <button onClick={logout} className="text-gray-400 hover:text-red-500 transition cursor-pointer">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto relative z-10 p-8 lg:p-12">
-        <BlurFade delay={0.1} inView>
-          <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">Panel de Control</h1>
-              <p className="text-gray-500 mt-2 font-medium">Estadísticas y gestión global de Pawtok.</p>
-            </div>
-          </header>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
-            <div className="bg-white/80 backdrop-blur-xl border border-white p-6 rounded-3xl shadow-[0px_10px_25px_-5px_rgba(0,0,0,0.05)]">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-[#0B84FF]">
+        {/* STAT METRICS GRID */}
+        <BlurFade delay={0.15} inView>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            {/* CARD 1: USUARIOS */}
+            <div className="bg-white/90 backdrop-blur-xl border border-gray-100/80 p-6 rounded-[2rem] shadow-[0_16px_36px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0B84FF] flex items-center justify-center shadow-sm">
                   <Users size={24} />
                 </div>
-                <div>
-                  <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">Total Usuarios</div>
-                  <div className="text-3xl font-black text-gray-900">{stats.usuarios}</div>
-                </div>
+                <span className="px-2.5 py-1 text-xs font-bold bg-blue-50 text-[#0B84FF] rounded-full">
+                  +Global
+                </span>
               </div>
-              <div className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-2 rounded-xl inline-block">
-                Adoptantes: <span className="font-bold text-gray-900">{stats.adoptantes}</span> | Refugios: <span className="font-bold text-gray-900">{stats.refugios}</span>
+              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Usuarios</div>
+              <div className="text-4xl font-black text-gray-900 tracking-tight mt-1">{stats.usuarios}</div>
+              <div className="mt-4 pt-3 border-t border-gray-100 text-xs font-semibold text-gray-500 flex items-center justify-between">
+                <span>Adoptantes: <strong className="text-gray-900 font-bold">{stats.adoptantes}</strong></span>
+                <span>Refugios: <strong className="text-[#0B84FF] font-bold">{stats.refugios}</strong></span>
               </div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-xl border border-white p-6 rounded-3xl shadow-[0px_10px_25px_-5px_rgba(0,0,0,0.05)]">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500">
+            {/* CARD 2: MASCOTAS */}
+            <div className="bg-white/90 backdrop-blur-xl border border-gray-100/80 p-6 rounded-[2rem] shadow-[0_16px_36px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm">
                   <PawPrint size={24} />
                 </div>
-                <div>
-                  <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">Mascotas</div>
-                  <div className="text-3xl font-black text-gray-900">{stats.mascotas}</div>
-                </div>
+                <span className="px-2.5 py-1 text-xs font-bold bg-orange-50 text-orange-600 rounded-full">
+                  Registradas
+                </span>
               </div>
-              <div className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-2 rounded-xl inline-block">
-                Disponibles: <span className="font-bold text-gray-900">{stats.disponibles}</span>
+              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mascotas</div>
+              <div className="text-4xl font-black text-gray-900 tracking-tight mt-1">{stats.mascotas}</div>
+              <div className="mt-4 pt-3 border-t border-gray-100 text-xs font-semibold text-gray-500 flex items-center justify-between">
+                <span>Disponibles: <strong className="text-green-600 font-bold">{stats.disponibles}</strong></span>
+                <Link to="/admin/mascotas" className="text-[#0B84FF] hover:underline flex items-center gap-0.5">
+                  Ver todas <ArrowUpRight size={12} />
+                </Link>
               </div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-xl border border-white p-6 rounded-3xl shadow-[0px_10px_25px_-5px_rgba(0,0,0,0.05)]">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500">
-                  <CheckCircle size={24} />
+            {/* CARD 3: SOLICITUDES */}
+            <div className="bg-white/90 backdrop-blur-xl border border-gray-100/80 p-6 rounded-[2rem] shadow-[0_16px_36px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-green-50 text-green-500 flex items-center justify-center shadow-sm">
+                  <CheckCircle2 size={24} />
                 </div>
-                <div>
-                  <div className="text-sm font-bold text-gray-400 uppercase tracking-wider">Solicitudes</div>
-                  <div className="text-3xl font-black text-gray-900">{stats.solicitudes}</div>
-                </div>
+                <span className="px-2.5 py-1 text-xs font-bold bg-green-50 text-green-600 rounded-full">
+                  Procesadas
+                </span>
               </div>
-              <div className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-2 rounded-xl inline-block">
-                Total Adopciones Procesadas
+              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Solicitudes</div>
+              <div className="text-4xl font-black text-gray-900 tracking-tight mt-1">{stats.solicitudes}</div>
+              <div className="mt-4 pt-3 border-t border-gray-100 text-xs font-semibold text-gray-500 flex items-center justify-between">
+                <span>Adopciones coordinadas</span>
+                <Link to="/admin/solicitudes-refugio" className="text-[#0B84FF] hover:underline flex items-center gap-0.5">
+                  Solicitudes <ArrowUpRight size={12} />
+                </Link>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            <div className="bg-white/80 backdrop-blur-xl border border-white rounded-3xl shadow-[0px_10px_25px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-[500px]">
+          {/* TABLES GRID */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            
+            {/* USUARIOS TABLE */}
+            <div className="bg-white/90 backdrop-blur-xl border border-gray-100/80 rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col h-[480px]">
               <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-                <h3 className="font-bold text-xl text-gray-900">Usuarios</h3>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0B84FF] flex items-center justify-center font-bold">
+                    <Users size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900">Usuarios Registrados</h3>
+                    <p className="text-xs text-gray-400 font-medium">Lista de usuarios en la plataforma</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-extrabold rounded-full">
+                  {usuarios.length}
+                </span>
               </div>
-              <div className="overflow-y-auto p-2 flex-1">
+              
+              <div className="overflow-y-auto p-4 flex-1">
                 <table className="w-full text-left border-separate border-spacing-y-2">
-                  <thead className="text-gray-400 text-xs font-bold uppercase px-4 sticky top-0 bg-white/80 backdrop-blur-sm z-10">
+                  <thead className="text-gray-400 text-xs font-semibold px-4 sticky top-0 bg-white/90 backdrop-blur-md z-10">
                     <tr>
-                      <th className="px-6 py-3">Nombre</th>
-                      <th className="px-6 py-3">Email</th>
-                      <th className="px-6 py-3">Rol</th>
-                      <th className="px-6 py-3 text-right">Acción</th>
+                      <th className="px-4 py-2.5 font-medium">Usuario</th>
+                      <th className="px-4 py-2.5 font-medium">Email</th>
+                      <th className="px-4 py-2.5 font-medium">Rol</th>
+                      <th className="px-4 py-2.5 font-medium text-right">Acción</th>
                     </tr>
                   </thead>
                   <tbody>
                     {usuarios.map(u => (
-                      <tr key={u.id} className="bg-gray-50/50 hover:bg-white transition rounded-2xl">
-                        <td className="px-6 py-4 font-bold text-gray-900 rounded-l-2xl">{u.nombre}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{u.email}</td>
-                        <td className="px-6 py-4 text-sm font-bold text-gray-700">{u.rol}</td>
-                        <td className="px-6 py-4 text-right rounded-r-2xl">
-                          <button onClick={() => deleteUser(u.id)} className="text-red-500 hover:text-red-600 font-bold text-sm bg-red-50 px-3 py-1.5 rounded-xl border border-red-100">Eliminar</button>
+                      <tr key={u.id} className="bg-gray-50/60 hover:bg-blue-50/30 transition-colors rounded-2xl group">
+                        <td className="px-4 py-3 font-bold text-gray-900 rounded-l-2xl text-sm">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#0B84FF] to-blue-400 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                              {u.nombre ? u.nombre.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <span className="truncate max-w-[120px]">{u.nombre}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500 truncate max-w-[140px]">{u.email}</td>
+                        <td className="px-4 py-3 text-xs font-bold">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase font-extrabold ${
+                            u.rol === 'ADMIN' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
+                            u.rol === 'REFUGIO' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                            'bg-blue-50 text-blue-600 border border-blue-100'
+                          }`}>
+                            {u.rol}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right rounded-r-2xl">
+                          <button
+                            onClick={() => deleteUser(u.id)}
+                            className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition cursor-pointer"
+                            title="Eliminar usuario"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -211,26 +238,52 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-xl border border-white rounded-3xl shadow-[0px_10px_25px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-[500px]">
+            {/* REFUGIOS TABLE */}
+            <div className="bg-white/90 backdrop-blur-xl border border-gray-100/80 rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col h-[480px]">
               <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
-                <h3 className="font-bold text-xl text-gray-900">Refugios</h3>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center font-bold">
+                    <Shield size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900">Refugios Aliados</h3>
+                    <p className="text-xs text-gray-400 font-medium">Organizaciones registradas</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-extrabold rounded-full">
+                  {refugios.length}
+                </span>
               </div>
-              <div className="overflow-y-auto p-2 flex-1">
+              
+              <div className="overflow-y-auto p-4 flex-1">
                 <table className="w-full text-left border-separate border-spacing-y-2">
-                  <thead className="text-gray-400 text-xs font-bold uppercase px-4 sticky top-0 bg-white/80 backdrop-blur-sm z-10">
+                  <thead className="text-gray-400 text-xs font-semibold px-4 sticky top-0 bg-white/90 backdrop-blur-md z-10">
                     <tr>
-                      <th className="px-6 py-3">Nombre</th>
-                      <th className="px-6 py-3">Teléfono</th>
-                      <th className="px-6 py-3 text-right">Acción</th>
+                      <th className="px-4 py-2.5 font-medium">Refugio</th>
+                      <th className="px-4 py-2.5 font-medium">Teléfono</th>
+                      <th className="px-4 py-2.5 font-medium text-right">Acción</th>
                     </tr>
                   </thead>
                   <tbody>
                     {refugios.map(r => (
-                      <tr key={r.id} className="bg-gray-50/50 hover:bg-white transition rounded-2xl">
-                        <td className="px-6 py-4 font-bold text-gray-900 rounded-l-2xl">{r.nombre}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{r.telefono}</td>
-                        <td className="px-6 py-4 text-right rounded-r-2xl">
-                          <button onClick={() => deleteRefugio(r.id)} className="text-red-500 hover:text-red-600 font-bold text-sm bg-red-50 px-3 py-1.5 rounded-xl border border-red-100">Eliminar</button>
+                      <tr key={r.id} className="bg-gray-50/60 hover:bg-orange-50/30 transition-colors rounded-2xl group">
+                        <td className="px-4 py-3 font-bold text-gray-900 rounded-l-2xl text-sm">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 font-bold text-xs flex items-center justify-center shrink-0">
+                              {r.nombre ? r.nombre.charAt(0).toUpperCase() : 'R'}
+                            </div>
+                            <span className="truncate max-w-[150px]">{r.nombre}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{r.telefono || 'Sin teléfono'}</td>
+                        <td className="px-4 py-3 text-right rounded-r-2xl">
+                          <button
+                            onClick={() => deleteRefugio(r.id)}
+                            className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition cursor-pointer"
+                            title="Eliminar refugio"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -238,46 +291,68 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
+
           </div>
 
-          <BlurFade delay={0.2} inView>
-            <div className="mt-8 bg-white/80 backdrop-blur-xl border border-white rounded-3xl shadow-[0px_10px_25px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="font-bold text-xl text-gray-900">Actividad Reciente</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead className="text-gray-400 text-xs font-bold uppercase bg-gray-50/50">
-                    <tr>
-                      <th className="px-6 py-3">Fecha</th>
-                      <th className="px-6 py-3">Usuario</th>
-                      <th className="px-6 py-3">Acción</th>
-                      <th className="px-6 py-3">Detalles</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {actividad.slice(0, 20).map((act, idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}>
-                        <td className="px-6 py-3 text-sm text-gray-500 whitespace-nowrap">{new Date(act.fecha).toLocaleString()}</td>
-                        <td className="px-6 py-3 font-semibold text-gray-900">{act.nombreUsuario}</td>
-                        <td className="px-6 py-3 text-sm">
-                          <span className="px-2 py-1 rounded-md bg-blue-50 text-blue-700 font-medium">{act.accion}</span>
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-600">{act.detalles}</td>
-                      </tr>
-                    ))}
-                    {actividad.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-gray-400 text-sm">No hay actividad reciente</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+          {/* ACTIVIDAD RECIENTE */}
+          <div className="bg-white/90 backdrop-blur-xl border border-gray-100/80 rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.04)] overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0B84FF] flex items-center justify-center font-bold">
+                  <Activity size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">Actividad Reciente</h3>
+                  <p className="text-xs text-gray-400 font-medium">Registro de acciones y movimientos del sistema</p>
+                </div>
               </div>
             </div>
-          </BlurFade>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="text-gray-400 text-xs font-semibold bg-gray-50/50">
+                  <tr>
+                    <th className="px-6 py-3.5 font-medium">Fecha</th>
+                    <th className="px-6 py-3.5 font-medium">Usuario</th>
+                    <th className="px-6 py-3.5 font-medium">Acción</th>
+                    <th className="px-6 py-3.5 font-medium">Detalles</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {actividad.slice(0, 15).map((act, idx) => (
+                    <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
+                      <td className="px-6 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(act.fecha).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-3.5 font-bold text-gray-900 text-xs">
+                        {act.nombreUsuario}
+                      </td>
+                      <td className="px-6 py-3.5 text-xs">
+                        <span className="px-2.5 py-1 rounded-full bg-blue-50 text-[#0B84FF] font-bold border border-blue-100">
+                          {act.accion}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 text-xs text-gray-600">
+                        {act.detalles}
+                      </td>
+                    </tr>
+                  ))}
+                  {actividad.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center text-gray-400 text-sm">
+                        No hay registros de actividad reciente
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </BlurFade>
+
       </main>
+
+      <Notification toasts={toasts} onDismiss={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
     </div>
   );
 };

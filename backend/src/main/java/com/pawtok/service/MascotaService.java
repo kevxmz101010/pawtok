@@ -30,6 +30,11 @@ public class MascotaService {
     private final MascotaRepository mascotaRepository;
     private final UsuarioRepository usuarioRepository;
     private final com.pawtok.repository.RefugioRepository refugioRepository;
+    private final com.pawtok.repository.AdopcionRepository adopcionRepository;
+    private final com.pawtok.repository.HistorialMedicoRepository historialMedicoRepository;
+    private final com.pawtok.repository.CitaVisitaRepository citaVisitaRepository;
+    private final com.pawtok.repository.FavoritoRepository favoritoRepository;
+    private final com.pawtok.repository.SeguimientoRepository seguimientoRepository;
     private final FileStorageService fileStorageService;
     private final AuditoriaMascotaEliminadaRepository auditoriaMascotaEliminadaRepository;
     private final MascotaImagenRepository mascotaImagenRepository;
@@ -202,20 +207,41 @@ public class MascotaService {
         Mascota mascota = mascotaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Mascota no encontrada"));
 
-        Usuario usuario = usuarioRepository.findByEmail(usuarioEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        if (usuarioEmail == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.UNAUTHORIZED, 
+                "Debes iniciar sesión para actualizar el estado"
+            );
+        }
+
+        Usuario usuario = usuarioRepository.findByEmail(usuarioEmail).orElse(null);
+        if (usuario == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.UNAUTHORIZED, 
+                "Usuario no encontrado"
+            );
+        }
 
         com.pawtok.model.Refugio refugio = refugioRepository.findByIdUsuario(usuario.getId()).orElse(null);
         boolean isOwner = refugio != null && mascota.getRefugio() != null && mascota.getRefugio().equals(String.valueOf(refugio.getId()));
 
         if (!isOwner && usuario.getRol() != Rol.ADMIN) {
-            throw new RuntimeException("No autorizado para actualizar el estado");
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, 
+                "No autorizado para actualizar el estado (Rol no permitido)"
+            );
         }
 
         mascota.setEstado(estado);
+        if (estado == EstadoMascota.DISPONIBLE) {
+            mascota.setDisponible(true);
+        } else {
+            mascota.setDisponible(false);
+        }
         return mapToDto(mascotaRepository.save(mascota));
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void deleteMascota(Long id, String usuarioEmail) {
         Mascota mascota = mascotaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Mascota no encontrada"));
@@ -227,9 +253,59 @@ public class MascotaService {
         boolean isOwner = refugio != null && mascota.getRefugio() != null && mascota.getRefugio().equals(String.valueOf(refugio.getId()));
 
         if (!isOwner && usuario.getRol() != Rol.ADMIN) {
-            throw new RuntimeException("No autorizado para eliminar esta mascota");
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, 
+                "No autorizado para eliminar esta mascota"
+            );
         }
 
+        // RN 1.8 / RF 1.8 (CP-GM-13): Validar si la mascota tiene un proceso de adopción aprobado o en seguimiento activo
+        List<com.pawtok.model.Adopcion> adopciones = adopcionRepository.findByMascotaId(mascota.getId());
+        boolean tieneAdopcionAprobadaOSeguimiento = false;
+
+        if (mascota.getEstado() == EstadoMascota.ADOPTADO) {
+            tieneAdopcionAprobadaOSeguimiento = true;
+        }
+
+        if (adopciones != null) {
+            for (com.pawtok.model.Adopcion ad : adopciones) {
+                if (ad.getEstado() == com.pawtok.model.enums.EstadoAdopcion.APROBADA) {
+                    tieneAdopcionAprobadaOSeguimiento = true;
+                    break;
+                }
+                List<com.pawtok.model.Seguimiento> segs = seguimientoRepository.findByIdAdopcionOrderByFechaDesc(ad.getId());
+                if (segs != null && !segs.isEmpty()) {
+                    tieneAdopcionAprobadaOSeguimiento = true;
+                    break;
+                }
+            }
+        }
+
+        if (tieneAdopcionAprobadaOSeguimiento) {
+            throw new IllegalArgumentException("No se puede eliminar la mascota porque tiene un proceso de adopción aprobado o en seguimiento activo");
+        }
+
+        // Limpiar registros hijos que no tienen cascade en la base de datos
+        List<com.pawtok.model.HistorialMedico> medList = historialMedicoRepository.findByIdMascotaOrderByFechaDesc(mascota.getId());
+        if (medList != null && !medList.isEmpty()) {
+            historialMedicoRepository.deleteAll(medList);
+        }
+
+        List<com.pawtok.model.CitaVisita> citasList = citaVisitaRepository.findByIdMascotaOrderByFechaDesc(mascota.getId());
+        if (citasList != null && !citasList.isEmpty()) {
+            citaVisitaRepository.deleteAll(citasList);
+        }
+
+        List<com.pawtok.model.Favorito> favList = favoritoRepository.findByMascotaId(mascota.getId());
+        if (favList != null && !favList.isEmpty()) {
+            favoritoRepository.deleteAll(favList);
+        }
+
+        if (adopciones != null && !adopciones.isEmpty()) {
+            adopcionRepository.deleteAll(adopciones);
+        }
+
+        // Guardar registro de auditoría de eliminación
         auditoriaMascotaEliminadaRepository.save(AuditoriaMascotaEliminada.builder()
                 .idMascotaOriginal(mascota.getId().intValue())
                 .nombreMascota(mascota.getNombre())

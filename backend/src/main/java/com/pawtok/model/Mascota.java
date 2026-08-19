@@ -73,14 +73,16 @@ public class Mascota {
     
     public EstadoMascota getEstado() { 
         if (estadoStr == null) return null;
-        if (estadoStr.equalsIgnoreCase("Disponible")) return EstadoMascota.DISPONIBLE;
-        if (estadoStr.equalsIgnoreCase("Adoptado")) return EstadoMascota.ADOPTADO;
+        if (estadoStr.equalsIgnoreCase("Disponible") || estadoStr.equalsIgnoreCase("DISPONIBLE")) return EstadoMascota.DISPONIBLE;
+        if (estadoStr.equalsIgnoreCase("Adoptado") || estadoStr.equalsIgnoreCase("ADOPTADO")) return EstadoMascota.ADOPTADO;
+        if (estadoStr.equalsIgnoreCase("Inhabilitado") || estadoStr.equalsIgnoreCase("INHABILITADO") || estadoStr.equalsIgnoreCase("No Disponible")) return EstadoMascota.INHABILITADO;
         return EstadoMascota.DISPONIBLE;
     } 
     public void setEstado(EstadoMascota val) { 
         if (val == null) estadoStr = null;
         else if (val == EstadoMascota.DISPONIBLE) estadoStr = "Disponible";
         else if (val == EstadoMascota.ADOPTADO) estadoStr = "Adoptado";
+        else if (val == EstadoMascota.INHABILITADO) estadoStr = "Inhabilitado";
     }
     
     public String getRefugio() { return idRefugio == null ? null : idRefugio.toString(); } 

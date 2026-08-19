@@ -29,3 +29,8 @@ frontend/public/uploads/
 # OS
 .DS_Store
 Thumbs.db
+
+# Documentation scripts & generated files
+generate_modulo_*.py
+*.py
+*.docx

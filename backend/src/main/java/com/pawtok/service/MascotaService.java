@@ -41,12 +41,19 @@ public class MascotaService {
     private final RegistroActividadService registroActividadService;
 
     /**
-     * Trae TODAS las mascotas de la base de datos.
-     * Convierte la entidad de base de datos (Mascota) a un objeto para enviar por internet (MascotaDTO).
+     * Trae TODAS las mascotas de la base de datos de forma optimizada.
+     * Precarga los refugios en un solo viaje de red para evitar el problema N+1.
      */
     public List<MascotaDTO> getAllMascotas() {
-        return mascotaRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id")).stream()
-                .map(this::mapToDto)
+        List<Mascota> list = mascotaRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
+        if (list.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        java.util.Map<Long, com.pawtok.model.Refugio> refugiosMap = refugioRepository.findAll().stream()
+                .filter(r -> r.getId() != null)
+                .collect(Collectors.toMap(com.pawtok.model.Refugio::getId, r -> r, (r1, r2) -> r1));
+        return list.stream()
+                .map(m -> mapToDto(m, refugiosMap))
                 .collect(Collectors.toList());
     }
 
@@ -398,6 +405,10 @@ public class MascotaService {
      * Consulta activamente mascota_imagenes para obtener la imagen principal y la galería.
      */
     private MascotaDTO mapToDto(Mascota mascota) {
+        return mapToDto(mascota, null);
+    }
+
+    private MascotaDTO mapToDto(Mascota mascota, java.util.Map<Long, com.pawtok.model.Refugio> refugiosMap) {
         String imagenPrincipal = mascota.getImagenUrl();
         List<String> galeriaList = null;
 
@@ -430,13 +441,21 @@ public class MascotaService {
         if (mascota.getRefugio() != null && !mascota.getRefugio().isEmpty()) {
             try {
                 Long rId = Long.parseLong(mascota.getRefugio());
-                var optRefugio = refugioRepository.findById(rId);
-                refugioNombre = optRefugio
-                        .map(com.pawtok.model.Refugio::getNombre)
-                        .orElse("Refugio Desconocido");
-                refugioHorario = optRefugio
-                        .map(com.pawtok.model.Refugio::getHorario)
-                        .orElse(null);
+                if (refugiosMap != null && refugiosMap.containsKey(rId)) {
+                    com.pawtok.model.Refugio r = refugiosMap.get(rId);
+                    if (r != null) {
+                        refugioNombre = r.getNombre() != null ? r.getNombre() : "Refugio Desconocido";
+                        refugioHorario = r.getHorario();
+                    }
+                } else {
+                    var optRefugio = refugioRepository.findById(rId);
+                    refugioNombre = optRefugio
+                            .map(com.pawtok.model.Refugio::getNombre)
+                            .orElse("Refugio Desconocido");
+                    refugioHorario = optRefugio
+                            .map(com.pawtok.model.Refugio::getHorario)
+                            .orElse(null);
+                }
             } catch (Exception e) {
                 refugioNombre = mascota.getRefugio();
             }
@@ -449,9 +468,14 @@ public class MascotaService {
             } catch (Exception ignored) {}
         }
         if (refugioHorario == null && idRefugio != null) {
-            refugioHorario = refugioRepository.findById(idRefugio)
-                    .map(com.pawtok.model.Refugio::getHorario)
-                    .orElse(null);
+            if (refugiosMap != null && refugiosMap.containsKey(idRefugio)) {
+                com.pawtok.model.Refugio r = refugiosMap.get(idRefugio);
+                if (r != null) refugioHorario = r.getHorario();
+            } else {
+                refugioHorario = refugioRepository.findById(idRefugio)
+                        .map(com.pawtok.model.Refugio::getHorario)
+                        .orElse(null);
+            }
         }
 
         return MascotaDTO.builder()

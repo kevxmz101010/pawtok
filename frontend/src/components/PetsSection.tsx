@@ -18,9 +18,19 @@ import { formatPetImageUrl } from '../utils/imageUtils';
 const normalizeText = (str?: string | null): string => {
   if (!str) return '';
   return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u0302\u0304-\u036f]/g, '') // Elimina acentos pero preserva la ñ (\u0303)
+    .normalize('NFC')
+    .trim();
+};
+
+const normalizeForSearch = (str?: string | null): string => {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Convierte tanto ñ en n como vocales con tilde para búsqueda flexible
     .trim();
 };
 
@@ -571,14 +581,17 @@ export default function PetsSection({ onShowToast }: PetsSectionProps = {}) {
       }
     }
 
-    // 2. Filtro por barra de búsqueda
+    // 2. Filtro por barra de búsqueda (soporta 'ñ' y tildes flexiblemente)
     if (searchText.trim()) {
-      const q = searchText.toLowerCase().trim();
+      const rawQ = searchText.toLowerCase().trim();
+      const normQ = normalizeForSearch(searchText);
       list = list.filter(p => {
-        const nombre = p.nombre?.toLowerCase() || '';
-        const raza = p.raza?.toLowerCase() || '';
-        const refugio = (p.refugioNombre || '').toLowerCase();
-        return nombre.includes(q) || raza.includes(q) || refugio.includes(q);
+        const nombre = p.nombre || '';
+        const raza = p.raza || '';
+        const refugio = p.refugioNombre || '';
+        const personalidad = p.personalidad || '';
+        const combined = `${nombre} ${raza} ${refugio} ${personalidad}`;
+        return combined.toLowerCase().includes(rawQ) || normalizeForSearch(combined).includes(normQ);
       });
     }
 

@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "pawtok-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,7 +14,6 @@
     "@base-ui/react": "^1.6.0",
     "@fontsource/geist-mono": "^5.2.8",
     "@fontsource/geist-sans": "^5.2.5",
-    "@google/genai": "^2.4.0",
     "@headlessui/react": "^2.2.10",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-avatar": "^1.2.0",

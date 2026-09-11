@@ -1,116 +1,143 @@
 package com.pawtok.config;
 
 import com.pawtok.model.Usuario;
-import com.pawtok.model.Mascota;
+import com.pawtok.model.Refugio;
 import com.pawtok.model.enums.Rol;
-import com.pawtok.model.enums.CategoriaMascota;
-import com.pawtok.model.enums.EstadoMascota;
 import com.pawtok.repository.UsuarioRepository;
-import com.pawtok.repository.MascotaRepository;
+import com.pawtok.repository.RefugioRepository;
+import com.pawtok.repository.DireccionRepository;
+import com.pawtok.model.Direccion;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.Random;
 import java.util.List;
-
-import com.pawtok.repository.RefugioRepository;
-import com.pawtok.model.Refugio;
 
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;
-    private final MascotaRepository mascotaRepository;
     private final RefugioRepository refugioRepository;
-    private final com.pawtok.repository.DireccionRepository direccionRepository;
+    private final DireccionRepository direccionRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
-        // Create Admin
-        if (usuarioRepository.findByEmail("admin@pawtok.com").isEmpty()) {
-            Usuario admin = Usuario.builder()
+        // 1. Administrador Principal
+        Usuario admin = usuarioRepository.findByEmail("admin@pawtok.com").orElse(null);
+        if (admin == null) {
+            admin = Usuario.builder()
                     .nombre("Administrador Principal")
                     .email("admin@pawtok.com")
                     .contrasena(passwordEncoder.encode("admin123"))
                     .rol(Rol.ADMIN)
-                    .bio("Administrador del sistema Pawtok.")
-                    .telefono("0000000000")
+                    .bio("Administrador general del ecosistema Pawtok.")
+                    .telefono("3001234567")
                     .creadoEn(LocalDateTime.now())
                     .build();
             usuarioRepository.save(admin);
+        } else {
+            admin.setContrasena(passwordEncoder.encode("admin123"));
+            admin.setRol(Rol.ADMIN);
+            usuarioRepository.save(admin);
         }
 
-        // Create a default Refugio if it doesn't exist to own the 20 pets
-        Usuario refugioUser = usuarioRepository.findByEmail("refugio1@pawtok.com").orElse(null);
+        // 2. Refugio 1 (Principal)
+        Usuario refugioUser = usuarioRepository.findByEmail("refugio@pawtok.com").orElse(null);
         if (refugioUser == null) {
             refugioUser = Usuario.builder()
-                    .nombre("Refugio Uno")
-                    .email("refugio1@pawtok.com")
-                    .contrasena(passwordEncoder.encode("refugio123"))
+                    .nombre("Refugio Huellas de Amor")
+                    .email("refugio@pawtok.com")
+                    .contrasena(passwordEncoder.encode("admin123"))
                     .rol(Rol.REFUGIO)
-                    .bio("El refugio principal de la ciudad.")
-                    .telefono("111222333")
+                    .bio("Refugio dedicado al rescate y bienestar animal.")
+                    .telefono("3101234567")
                     .creadoEn(LocalDateTime.now())
                     .build();
             refugioUser = usuarioRepository.save(refugioUser);
+        } else {
+            refugioUser.setContrasena(passwordEncoder.encode("admin123"));
+            refugioUser.setRol(Rol.REFUGIO);
+            usuarioRepository.save(refugioUser);
         }
 
-        Refugio refugio = refugioRepository.findByIdUsuario(refugioUser.getId()).orElse(null);
-        if (refugio == null) {
-            refugio = new Refugio();
-            refugio.setIdUsuario(refugioUser.getId());
-            refugio.setNombre(refugioUser.getNombre());
-            refugio.setEmail(refugioUser.getEmail());
-            refugio.setTelefono(refugioUser.getTelefono());
-            refugio.setDireccion("Calle Principal 123");
-            refugio.setDescripcion(refugioUser.getBio());
-            refugio = refugioRepository.save(refugio);
+        Refugio ref1 = refugioRepository.findByIdUsuario(refugioUser.getId()).orElse(null);
+        if (ref1 == null) {
+            ref1 = new Refugio();
+            ref1.setIdUsuario(refugioUser.getId());
+            ref1.setNombre(refugioUser.getNombre());
+            ref1.setEmail(refugioUser.getEmail());
+            ref1.setTelefono(refugioUser.getTelefono());
+            ref1.setDireccion("Calle 10 # 43E-20, El Poblado, Medellín");
+            ref1.setDescripcion(refugioUser.getBio());
+            ref1.setEstadoVerificacion("Aprobado");
+            refugioRepository.save(ref1);
+        } else {
+            ref1.setEstadoVerificacion("Aprobado");
+            refugioRepository.save(ref1);
         }
 
-        // Create 20 pets for this refugio if it has less than 20
-        if (mascotaRepository.findByIdRefugio(refugio.getId()).size() < 20) {
-            String[] nombresPerros = {"Max", "Bella", "Charlie", "Luna", "Buddy", "Lucy", "Rocky", "Daisy", "Milo", "Zoe"};
-            String[] nombresGatos = {"Oliver", "Leo", "Milo", "Loki", "Chloe", "Nala", "Simba", "Lily", "Mia", "Shadow"};
-            Random random = new Random();
-
-            for (int i = 1; i <= 20; i++) {
-                boolean isPerro = random.nextBoolean();
-                String nombre = isPerro ? nombresPerros[random.nextInt(nombresPerros.length)] + " " + i : nombresGatos[random.nextInt(nombresGatos.length)] + " " + i;
-                CategoriaMascota categoria = isPerro ? CategoriaMascota.PERRO : CategoriaMascota.GATO;
-                
-                Mascota mascota = new Mascota();
-                mascota.setNombre(nombre);
-                mascota.setRaza(isPerro ? "Mestizo" : "Gato Común Europeo");
-                mascota.setEdad(String.valueOf(random.nextInt(60) + 2)); // 2 to 61 months
-                mascota.setDescripcion("Una mascota muy juguetona y cariñosa que busca un hogar lleno de amor. Número de registro: " + i);
-                mascota.setImagenUrl(isPerro ? "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=400" : "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=400");
-                mascota.setCategoria(categoria);
-                mascota.setEstado(EstadoMascota.DISPONIBLE);
-                mascota.setRefugio(refugio.getId().toString());
-                mascota.setCreadoEn(LocalDateTime.now().minusDays(random.nextInt(30)));
-                
-                mascota.setTamano(isPerro ? "Mediano" : "Pequeño");
-                mascota.setPeso(isPerro ? "15 kg" : "4 kg");
-                mascota.setUbicacion("Ciudad Central");
-                mascota.setEnergia("Alta");
-                mascota.setConNinos("Sí");
-                mascota.setOrigen("Rescatado");
-                mascota.setPersonalidad("Juguetón,Cariñoso");
-                mascota.setDisponible(true);
-                
-                mascotaRepository.save(mascota);
-            }
+        // 3. Refugio 2 (Secundario)
+        Usuario refugio2User = usuarioRepository.findByEmail("refugio2@pawtok.com").orElse(null);
+        if (refugio2User == null) {
+            refugio2User = Usuario.builder()
+                    .nombre("Refugio Esperanza Animal")
+                    .email("refugio2@pawtok.com")
+                    .contrasena(passwordEncoder.encode("admin123"))
+                    .rol(Rol.REFUGIO)
+                    .bio("Comprometidos con encontrar un hogar digno para cada mascota.")
+                    .telefono("3201234567")
+                    .creadoEn(LocalDateTime.now())
+                    .build();
+            refugio2User = usuarioRepository.save(refugio2User);
+        } else {
+            refugio2User.setContrasena(passwordEncoder.encode("admin123"));
+            refugio2User.setRol(Rol.REFUGIO);
+            usuarioRepository.save(refugio2User);
         }
 
-        // Corregir filas de direcciones donde id_usuario esté nulo y tenga id_refugio
+        Refugio ref2 = refugioRepository.findByIdUsuario(refugio2User.getId()).orElse(null);
+        if (ref2 == null) {
+            ref2 = new Refugio();
+            ref2.setIdUsuario(refugio2User.getId());
+            ref2.setNombre(refugio2User.getNombre());
+            ref2.setEmail(refugio2User.getEmail());
+            ref2.setTelefono(refugio2User.getTelefono());
+            ref2.setDireccion("Carrera 65 # 34A-12, Laureles, Medellín");
+            ref2.setDescripcion(refugio2User.getBio());
+            ref2.setEstadoVerificacion("Aprobado");
+            refugioRepository.save(ref2);
+        } else {
+            ref2.setEstadoVerificacion("Aprobado");
+            refugioRepository.save(ref2);
+        }
+
+        // 4. Adoptante
+        Usuario adoptanteUser = usuarioRepository.findByEmail("adoptante@pawtok.com").orElse(null);
+        if (adoptanteUser == null) {
+            adoptanteUser = Usuario.builder()
+                    .nombre("Juan Adoptante")
+                    .email("adoptante@pawtok.com")
+                    .contrasena(passwordEncoder.encode("admin123"))
+                    .rol(Rol.USUARIO)
+                    .bio("Amante de los animales en busca de adoptar responsablemente.")
+                    .telefono("3009876543")
+                    .creadoEn(LocalDateTime.now())
+                    .build();
+            usuarioRepository.save(adoptanteUser);
+        } else {
+            adoptanteUser.setContrasena(passwordEncoder.encode("admin123"));
+            adoptanteUser.setRol(Rol.USUARIO);
+            usuarioRepository.save(adoptanteUser);
+        }
+
+        // Normalizar direcciones huérfanas
         try {
-            List<com.pawtok.model.Direccion> orphanDirs = direccionRepository.findAll();
-            for (com.pawtok.model.Direccion d : orphanDirs) {
+            List<Direccion> orphanDirs = direccionRepository.findAll();
+            for (Direccion d : orphanDirs) {
                 if (d.getIdUsuario() == null && d.getIdRefugio() != null) {
                     refugioRepository.findById(d.getIdRefugio()).ifPresent(ref -> {
                         if (ref.getIdUsuario() != null) {

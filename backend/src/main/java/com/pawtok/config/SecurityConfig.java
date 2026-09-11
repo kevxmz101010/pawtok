@@ -57,6 +57,11 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        org.springframework.web.filter.CharacterEncodingFilter encodingFilter = new org.springframework.web.filter.CharacterEncodingFilter();
+        encodingFilter.setEncoding("UTF-8");
+        encodingFilter.setForceEncoding(true);
+        http.addFilterBefore(encodingFilter, org.springframework.security.web.session.DisableEncodeUrlFilter.class);
+
         http
             .cors(cors -> cors.configure(http)) // Permite que el Frontend (React) se comunique con este Backend
             .csrf(csrf -> csrf.disable()) // Desactiva protección CSRF (no es necesaria en nuestro diseño)

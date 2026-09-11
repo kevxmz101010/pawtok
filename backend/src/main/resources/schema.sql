@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS `auditoria_historial` (
   `fecha_accion` timestamp NOT NULL DEFAULT current_timestamp(),
   `motivo` text DEFAULT NULL,
   PRIMARY KEY (`id_auditoria`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `auditoria_mascotas_eliminadas` (
   `id_auditoria` int(11) NOT NULL AUTO_INCREMENT,
